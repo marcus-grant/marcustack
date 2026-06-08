@@ -1,0 +1,19 @@
+# build outputs
+_build/
+
+# stage run history
+runs/
+
+# per-machine config (template is committed as config.toml.example)
+config.toml
+
+# editor / OS
+*.swp
+*.swo
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# bats cache
+.bats-cache/

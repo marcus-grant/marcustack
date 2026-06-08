@@ -1,0 +1,17 @@
+# marcustack configuration example.
+# Copy to config.toml and fill in your values.
+# config.toml is per-machine and gitignored.
+
+[source]
+# Local directory containing the photos NormPic reads.
+photo_dir = "/path/to/photos"
+
+[tools]
+# Local clone paths used by `uv run --project ...`.
+normpic = "/path/to/normpic-clone"
+galleria = "/path/to/galleria-clone"
+
+[deploy]
+# Placeholders; values deferred pending NormPic v0.1.0 planning.
+zone = "<gallery-zone-name>"
+key_ref = "<password-store-path>"
