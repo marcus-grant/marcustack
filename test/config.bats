@@ -70,3 +70,17 @@ teardown() {
     run load_config "${TEST_TMP}/config.toml"
     [[ "$status" -eq 0 ]]
 }
+
+@test "load_config resolves a relative path against repo root" {
+    sed -i "s|${TEST_TMP}/out|_build/test-out|" \
+        "${TEST_TMP}/config.toml"
+    source scripts/lib/config.sh
+    load_config "${TEST_TMP}/config.toml"
+    [[ "$CFG_MANIFEST_DIR" == "$(git rev-parse --show-toplevel)/_build/test-out" ]]
+}
+
+@test "load_config leaves an absolute path unchanged" {
+    source scripts/lib/config.sh
+    load_config "${TEST_TMP}/config.toml"
+    [[ "$CFG_MANIFEST_DIR" == "${TEST_TMP}/out" ]]
+}

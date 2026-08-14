@@ -19,6 +19,18 @@ _cfg_get() {
     ' "${file}"
 }
 
+# Resolve a path against the repository root when relative.
+# Absolute paths pass through unchanged.
+_cfg_abs() {
+    local path="$1"
+    [[ -z "${path}" ]] && return 0
+    [[ "${path}" == /* ]] && {
+        printf '%s' "${path}"
+        return 0
+    }
+    printf '%s/%s' "$(git rev-parse --show-toplevel)" "${path}"
+}
+
 # Load configuration into CFG_* variables.
 # Exits non-zero with a message naming what was not found.
 load_config() {
@@ -33,10 +45,10 @@ load_config() {
     export CFG_FULL_DIR CFG_WEB_DIR CFG_EXPECTED_COUNT
     export CFG_MANIFEST_DIR CFG_FULL_NAME CFG_WEB_NAME
 
-    CFG_FULL_DIR="$(_cfg_get "${file}" source full_dir)"
-    CFG_WEB_DIR="$(_cfg_get "${file}" source web_dir)"
+    CFG_FULL_DIR="$(_cfg_abs "$(_cfg_get "${file}" source full_dir)")"
+    CFG_WEB_DIR="$(_cfg_abs "$(_cfg_get "${file}" source web_dir)")"
     CFG_EXPECTED_COUNT="$(_cfg_get "${file}" source expected_count)"
-    CFG_MANIFEST_DIR="$(_cfg_get "${file}" output manifest_dir)"
+    CFG_MANIFEST_DIR="$(_cfg_abs "$(_cfg_get "${file}" output manifest_dir)")"
     CFG_FULL_NAME="$(_cfg_get "${file}" output full_name)"
     CFG_WEB_NAME="$(_cfg_get "${file}" output web_name)"
 
