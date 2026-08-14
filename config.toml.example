@@ -2,16 +2,34 @@
 # Copy to config.toml and fill in your values.
 # config.toml is per-machine and gitignored.
 
-[source]
-# Local directory containing the photos NormPic reads.
-photo_dir = "/path/to/photos"
+# marcustack configuration example.
+# Copy to config.toml and fill in your values.
+# config.toml is per-machine and gitignored.
+# It holds paths and counts only, never credentials.
 
-[tools]
-# Local clone paths used by `uv run --project ...`.
-normpic = "/path/to/normpic-clone"
-galleria = "/path/to/galleria-clone"
+[source]
+# Local directory containing the full-resolution photos.
+full_dir = "/path/to/photos/full"
+
+# Local directory containing the web-compressed photos.
+web_dir = "/path/to/photos/web"
+
+# Number of photos expected in each collection.
+expected_count = 0
+
+[output]
+# Local directory NormPic writes manifests and symlink trees to.
+manifest_dir = "/path/to/output"
+
+# Collection names passed to NormPic, used in generated filenames.
+full_name = "wedding-full"
+web_name = "wedding-web"
+[normpic]
+# Git tag installed by `just install-normpic`.
+# Pinned so parallel development upstream cannot change what runs.
+version = "v0.1.1"
 
 [deploy]
-# Placeholders; values deferred pending NormPic v0.1.0 planning.
+# Placeholders; values deferred till deploy is ready.
 zone = "<gallery-zone-name>"
 key_ref = "<password-store-path>"
