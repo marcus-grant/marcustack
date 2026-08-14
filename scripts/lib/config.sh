@@ -43,17 +43,16 @@ load_config() {
     fi
 
     export CFG_FULL_DIR CFG_WEB_DIR CFG_EXPECTED_COUNT
-    export CFG_MANIFEST_DIR CFG_FULL_NAME CFG_WEB_NAME
+    export CFG_MANIFEST_DIR CFG_COLLECTION_NAME
 
     CFG_FULL_DIR="$(_cfg_abs "$(_cfg_get "${file}" source full_dir)")"
     CFG_WEB_DIR="$(_cfg_abs "$(_cfg_get "${file}" source web_dir)")"
     CFG_EXPECTED_COUNT="$(_cfg_get "${file}" source expected_count)"
     CFG_MANIFEST_DIR="$(_cfg_abs "$(_cfg_get "${file}" output manifest_dir)")"
-    CFG_FULL_NAME="$(_cfg_get "${file}" output full_name)"
-    CFG_WEB_NAME="$(_cfg_get "${file}" output web_name)"
+    CFG_COLLECTION_NAME="$(_cfg_get "${file}" output collection_name)"
 
     for key in full_dir web_dir expected_count \
-        manifest_dir full_name web_name; do
+        manifest_dir collection_name; do
         value="CFG_${key^^}"
         [[ -z "${!value}" ]] && missing+=("${key}")
     done

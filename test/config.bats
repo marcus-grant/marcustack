@@ -12,8 +12,7 @@ expected_count = 3
 
 [output]
 manifest_dir = "OUT"
-full_name = "test-full"
-web_name = "test-web"
+collection_name = "test-wedding"
 TOML
     sed -i "s|FULL|${TEST_TMP}/full|; s|WEB|${TEST_TMP}/web|; \
 s|OUT|${TEST_TMP}/out|" "${TEST_TMP}/config.toml"
@@ -34,8 +33,7 @@ teardown() {
     [[ "$CFG_WEB_DIR" == "${TEST_TMP}/web" ]]
     [[ "$CFG_EXPECTED_COUNT" == "3" ]]
     [[ "$CFG_MANIFEST_DIR" == "${TEST_TMP}/out" ]]
-    [[ "$CFG_FULL_NAME" == "test-full" ]]
-    [[ "$CFG_WEB_NAME" == "test-web" ]]
+    [[ "$CFG_COLLECTION_NAME" == "test-wedding" ]]
 }
 
 @test "load_config fails naming a missing config file" {

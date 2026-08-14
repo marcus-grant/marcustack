@@ -21,9 +21,10 @@ expected_count = 0
 # Local directory NormPic writes manifests and symlink trees to.
 manifest_dir = "/path/to/output"
 
-# Collection names passed to NormPic, used in generated filenames.
-full_name = "wedding-full"
-web_name = "wedding-web"
+# Collection name passed to NormPic, used in generated filenames.
+# One name for both collections, so entries pair on relative_path.
+collection_name = "wedding"
+
 [normpic]
 # Git tag installed by `just install-normpic`.
 # Pinned so parallel development upstream cannot change what runs.
