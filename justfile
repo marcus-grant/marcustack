@@ -7,7 +7,7 @@ default:
 
 # Run the bats test suite
 test:
-    bats tests/
+    bats test/
 
 # Lint shell scripts (extend paths as they appear)
 lint:
@@ -21,3 +21,5 @@ clean:
 deploy:
     @echo "deploy: not yet implemented. See doc/v01.md and doc/TODO.md."
     @exit 1
+# Run the full pre-commit gate
+check: lint test
