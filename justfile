@@ -11,7 +11,7 @@ test:
 
 # Lint shell scripts (extend paths as they appear)
 lint:
-    shellcheck scripts/lib/*.sh
+    shellcheck scripts/lib/*.sh scripts/pipeline.sh
 
 # Wipe build outputs and run history
 clean:
@@ -23,3 +23,12 @@ deploy:
     @exit 1
 # Run the full pre-commit gate
 check: lint test
+
+# Install the pinned normpic release
+install-normpic:
+    uv tool install --force \
+      "git+https://github.com/marcus-grant/normpic@$(grep -A2 '\[normpic\]' config.toml | grep version | cut -d'"' -f2)"
+
+# Run the gallery pipeline
+pipeline:
+    bash scripts/pipeline.sh
