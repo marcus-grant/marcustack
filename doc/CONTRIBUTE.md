@@ -92,12 +92,13 @@ A plan is an ordered task list precise enough to execute top to bottom.
   `doc/v01.md` locally, or an upstream document by path.
 - Scope stated concretely: which files, roughly how much.
   A disproportionate diff later signals drift.
-- Closes with a `Doc:` commit, then a `Pln:` commit updating
-  `doc/TODO.md`.
-  Skipping either is deliberate, not default.
+- Closes with a `Doc:` commit when the work added, changed, or
+  invalidated reference documentation.
 
 A plan recorded in `doc/TODO.md` takes the same shape under a
 branch-named section, executable without reconstruction.
+A completed task is deleted from `doc/TODO.md`; the git log is the
+record of what shipped.
 
 ## Test-driven development
 
@@ -250,6 +251,13 @@ standard.
 - Review against the repository, never the prose alone.
 - Shell output moves by clipboard relay, so requests are targeted
   greps and line ranges, never "send me the whole file".
+- Every command must bound its output before it runs.
+  Pipe through `head`, `tail`, `wc -l`, or a count; never emit a
+  whole manifest, directory listing, or diff over a large data set.
+  Output lands in a conversation with finite context, and one
+  unbounded command can end a working session.
+  When the answer is "did this differ", return the count, not the
+  difference.
 - One command per exchange, multiple commands brace-grouped before the
   pipe.
 - Never issue `cd`; shell directory state cannot be tracked across the
@@ -326,6 +334,6 @@ conversations, sessions, or assistants.
 Every document reads cold to a developer who knows nothing about how
 it was written.
 
-`doc/TODO.md` is append-and-prune.
+`doc/TODO.md` tracks upcoming work only.
 Find a section with `grep -n`, view a few lines, edit surgically.
 A completed task is deleted, not marked done.
