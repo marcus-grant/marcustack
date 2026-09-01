@@ -7,7 +7,7 @@ decisions that are settled.
 
 ## Critical path
 
-Normpic `v0.1.0` -> galleria -> marcustack deploy.
+Normpic `v0.1.1` -> galleria -> marcustack deploy.
 Gated, not parallel.
 Everything else waits for a live gallery.
 
@@ -15,7 +15,7 @@ Everything else waits for a live gallery.
 
 - **normpic** (Python): produces photo copy manifests and symlink
   trees.
-  `v0.1.0` published, contract frozen.
+  `v0.1.1` published, contract frozen.
   Parked.
 - **galleria** (Python): static gallery generator, consumes normpic
   manifests.
@@ -39,7 +39,8 @@ Everything else waits for a live gallery.
 
 ## Settled decisions
 
-**Content addressing.**
+### Content addressing
+
 Prefix is `b3c32:`, naming the shared b3c32 library.
 Unkeyed BLAKE3-120, Crockford Base32, XOF grow-only so shorter digests
 are byte-prefixes of longer ones.
@@ -47,28 +48,84 @@ The library owns the vectors and conformance tests.
 Consumers pin it and run a drift tripwire; they do not build vectors.
 depo binds the canonical form as its durable key.
 
-**normpic contract.**
-Frozen at `v0.1.0`.
+### NormPic contract
+
+Frozen at `v0.1.1`.
 The consumer surface is `doc/architecture/manifest-contract.md`,
-`schema/v0.1.0.json`, and `doc/guides/manifest-integration.md`.
-Variant collections are deferred in `v0.1.0`,
+`schema/v0.1.1.json`, and `doc/guides/manifest-integration.md`.
+Variant collections are deferred in `v0.1.1`,
 so one manifest describes one collection root.
 Pairing happens across two manifests from two runs, matching on
 `relative_path`.
 `original_filename` is unpopulated by current producer paths.
 Consumers must not depend on its absence.
 
-**Stage contract.**
+### Stage contract
+
 marcustack runs stages as `run_stage NAME -- CMD`.
 It calls other projects through their CLI, never their task runner
 recipes, so recipe renames cannot break the pipeline.
 Operation parameters live in marcustack, not in the tools it calls.
 
-**Single source of truth.**
+### Single source of truth
+
 Where a contract exists as both a canonical artifact and a code
 definition, they drift.
 The artifact is the source; the code copy is deleted or derived, and a
 conformance test guards it.
+
+### Storage split
+
+Storage splits by asset lifecycle.
+normpic-manifested originals live in a pics bucket: write-once, large,
+rarely fetched.
+Site output, including galleria's derived renditions, lives in a site
+bucket: regenerated on build, small, frequently fetched.
+The edge routes the rendition prefixes to the pics bucket.
+Bucket configuration and edge routing belong to marcustack.
+Galleria emits relative paths and knows nothing of buckets or
+hostnames.
+
+## Deploy tail
+
+marcustack owns the path from galleria's output to the CDN.
+
+Settled:
+
+- The storage split above.
+- Variant names in config and edge routing are `original` and
+  `display`, matching galleria's rendition kinds.
+
+Post-MVP, dual-deploy migration:
+
+- Galleria emits one build and stays ignorant of the migration.
+- marcustack copies that output to two destinations.
+- Permanent home: a new deploy bucket plus edge routing, plain
+  output, no banner.
+- Legacy endpoint: the same output with a deprecation banner injected
+  by a script that adds a fixed HTML snippet to the relevant HTML
+  files.
+  Default assumption is every grid pagination page, or simply every
+  HTML file in the legacy copy.
+  The exact target set is decided against the code when the item is
+  live.
+- The banner announces the scheduled deprecation, links to the
+  permanent home, and tells visitors to bookmark or write down the
+  new address.
+- The legacy endpoint and its bucket stay live roughly one year,
+  then both are deleted.
+
+Open, cross-project: the site navbar.
+
+- Galleria's pages sit at two depths, `gallery/COLLECTION/` and
+  `gallery/COLLECTION/pic/`, and all links are relative.
+- A verbatim fragment cannot carry links that resolve at both depths.
+  A template override puts two projects in authority over one
+  template set.
+- Post-processing is the only mechanism that can emit depth-correct
+  links per file, and it reuses the banner injection mechanism.
+- Open: whether one injector handles navbar and banner or two, and
+  whether retro-theme or personal-site owns the navbar markup.
 
 ## Known gaps
 
