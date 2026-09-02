@@ -3,86 +3,75 @@
 setup() {
     TEST_TMP="$(mktemp -d)"
     export TEST_TMP
-    source test/fixture.sh
     source scripts/lib/upload.sh
-    fixture_site_tree "${TEST_TMP}/site" "test wedding" 3
-    export RCLONE_CONF="${TEST_TMP}/rclone.conf"
-    cat >"${RCLONE_CONF}" <<CONF
-[testpics]
-type = local
-[testsite]
-type = local
-CONF
-    PICS_DEST="${TEST_TMP}/remote-pics"
-    SITE_DEST="${TEST_TMP}/remote-site"
-    export PICS_DEST SITE_DEST
-    mkdir -p "${PICS_DEST}" "${SITE_DEST}"
+    mkdir -p "${TEST_TMP}/local"
+    echo alpha >"${TEST_TMP}/local/a.jpg"
+    echo beta >"${TEST_TMP}/local/b.jpg"
+    LISTING="${TEST_TMP}/listing"
+    export LISTING
 }
 
 teardown() {
     rm -rf "${TEST_TMP}"
 }
 
-up() {
-    upload_site "${RCLONE_CONF}" \
-        "testpics:${PICS_DEST}" "testsite:${SITE_DEST}" \
-        "${TEST_TMP}/site" "test wedding"
+sum_of() {
+    sha256sum <"$1" | cut -d' ' -f1
 }
 
-@test "upload fails naming the rclone conf when absent" {
-    rm "${RCLONE_CONF}"
-    run up
-    [[ "$status" -ne 0 ]]
-    [[ "$output" == *"rclone.conf"* ]]
+@test "plan puts every file against an empty listing" {
+    : >"${LISTING}"
+    run upload_plan_dir "${TEST_TMP}/local" "${LISTING}" 0 0
+    [[ "$output" == *"put a.jpg"* ]]
+    [[ "$output" == *"put b.jpg"* ]]
 }
 
-@test "upload sends original bytes not symlinks, omits manifest" {
-    run up
-    [[ "$status" -eq 0 ]]
-    [[ -f "${PICS_DEST}/pics/test wedding/original/pic1.jpg" ]]
-    [[ ! -L "${PICS_DEST}/pics/test wedding/original/pic1.jpg" ]]
-    [[ ! -e "${PICS_DEST}/pics/test wedding/original/manifest.json" ]]
+@test "plan skips a file whose checksum matches" {
+    printf '%s  a.jpg\n' "$(sum_of "${TEST_TMP}/local/a.jpg")" \
+        >"${LISTING}"
+    run upload_plan_dir "${TEST_TMP}/local" "${LISTING}" 0 0
+    [[ "$output" == *"skip a.jpg"* ]]
+    [[ "$output" == *"put b.jpg"* ]]
 }
 
-@test "upload keeps original and display out of the site remote" {
-    run up
-    [[ "$status" -eq 0 ]]
-    [[ -d "${SITE_DEST}/pics/test wedding/preview" ]]
-    [[ ! -e "${SITE_DEST}/pics/test wedding/original" ]]
-    [[ ! -e "${SITE_DEST}/pics/test wedding/display" ]]
+@test "plan puts a file whose checksum differs" {
+    printf '%s  a.jpg\n' "$(sum_of "${TEST_TMP}/local/b.jpg")" \
+        >"${LISTING}"
+    run upload_plan_dir "${TEST_TMP}/local" "${LISTING}" 0 0
+    [[ "$output" == *"put a.jpg"* ]]
 }
 
-@test "upload puts pages and index on the site remote" {
-    run up
-    [[ "$status" -eq 0 ]]
-    [[ -f "${SITE_DEST}/index.html" ]]
-    [[ -f "${SITE_DEST}/gallery/test wedding/pic/pic2.html" ]]
+@test "plan matches uppercase remote checksums" {
+    sum_of "${TEST_TMP}/local/a.jpg" | tr '[:lower:]' '[:upper:]' |
+        xargs -I{} printf '%s  a.jpg\n' {} >"${LISTING}"
+    run upload_plan_dir "${TEST_TMP}/local" "${LISTING}" 0 0
+    [[ "$output" == *"skip a.jpg"* ]]
 }
 
-@test "second upload transfers nothing" {
-    run up
-    run up
-    [[ "$status" -eq 0 ]]
-    [[ "$output" != *"Copied"* ]]
+@test "plan deletes a remote file absent locally" {
+    printf -- '-  gone.jpg\n' >"${LISTING}"
+    run upload_plan_dir "${TEST_TMP}/local" "${LISTING}" 0 0
+    [[ "$output" == *"del gone.jpg"* ]]
 }
 
-@test "site sync removes a page deleted locally" {
-    run up
-    rm "${TEST_TMP}/site/gallery/test wedding/pic/pic3.html"
-    run up
-    [[ ! -e "${SITE_DEST}/gallery/test wedding/pic/pic3.html" ]]
+@test "skip-existing mode never deletes and never re-puts" {
+    printf -- '-  a.jpg\n-  gone.jpg\n' >"${LISTING}"
+    run upload_plan_dir "${TEST_TMP}/local" "${LISTING}" 1 0
+    [[ "$output" == *"skip a.jpg"* ]]
+    [[ "$output" != *"del"* ]]
+    [[ "$output" != *"put a.jpg"* ]]
 }
 
-@test "pics copy never removes a remote file" {
-    run up
-    rm "${TEST_TMP}/site/pics/test wedding/original/pic3.jpg"
-    run up
-    [[ -f "${PICS_DEST}/pics/test wedding/original/pic3.jpg" ]]
+@test "exclude mode leaves manifest.json unmentioned" {
+    echo m >"${TEST_TMP}/local/manifest.json"
+    : >"${LISTING}"
+    run upload_plan_dir "${TEST_TMP}/local" "${LISTING}" 1 1
+    [[ "$output" != *"manifest.json"* ]]
 }
 
-@test "site sync leaves files outside its scope alone" {
-    echo legacy >"${SITE_DEST}/about.html"
-    run up
-    [[ "$status" -eq 0 ]]
-    [[ -f "${SITE_DEST}/about.html" ]]
+@test "plan handles a filename containing a space" {
+    echo s >"${TEST_TMP}/local/my pic.jpg"
+    : >"${LISTING}"
+    run upload_plan_dir "${TEST_TMP}/local" "${LISTING}" 0 0
+    [[ "$output" == *"put my pic.jpg"* ]]
 }

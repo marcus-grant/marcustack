@@ -15,16 +15,14 @@ collection_name = "test-wedding"
 [normpic]
 version = "v0.1.1"
 [galleria]
-version = "v0.0.2"
+version = "v0.0.3"
 [deploy]
-rclone_conf = "RCONF"
-pics_remote = "test-pics"
-site_remote = "test-site"
+storage_host = "storage.example.test"
+pics_zone = "test-pics"
+site_zone = "test-site"
 TOML
     sed -i "s|FULL|${TEST_TMP}/full|; s|WEB|${TEST_TMP}/web|; \
-s|OUT|${TEST_TMP}/out|; s|RCONF|${TEST_TMP}/rclone.conf|" \
-        "${TEST_TMP}/config.toml"
-    touch "${TEST_TMP}/rclone.conf"
+s|OUT|${TEST_TMP}/out|" "${TEST_TMP}/config.toml"
 }
 
 teardown() {
@@ -96,10 +94,11 @@ teardown() {
     source scripts/lib/config.sh
     load_config "${TEST_TMP}/config.toml"
     [[ "$CFG_SITE_DIR" == "${TEST_TMP}/out" ]]
-    [[ "$CFG_GALLERIA_VERSION" == "v0.0.2" ]]
-    [[ "$CFG_RCLONE_CONF" == "${TEST_TMP}/rclone.conf" ]]
-    [[ "$CFG_PICS_REMOTE" == "test-pics" ]]
-    [[ "$CFG_SITE_REMOTE" == "test-site" ]]
+    [[ "$CFG_GALLERIA_VERSION" == "v0.0.3" ]]
+    [[ "$CFG_STORAGE_HOST" == "storage.example.test" ]]
+    [[ "$CFG_PICS_ZONE" == "test-pics" ]]
+    [[ "$CFG_SITE_ZONE" == "test-site" ]]
+    [[ "$CFG_PICS_HDR" == */galleries/test-wedding/pics.hdr ]]
 }
 
 @test "load_config fails naming a missing site_dir" {

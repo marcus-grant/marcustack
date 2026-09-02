@@ -13,13 +13,9 @@ STUB
 #!/usr/bin/env bash
 echo "uv $*" >>"${STUB_LOG}"
 STUB
-    cat >"${TEST_TMP}/bin/rclone" <<'STUB'
-#!/usr/bin/env bash
-echo "rclone $*" >>"${STUB_LOG}"
-STUB
     chmod +x "${TEST_TMP}/bin/"*
     export STUB_LOG="${TEST_TMP}/stub.log"
-    touch "${STUB_LOG}" "${TEST_TMP}/rclone.conf"
+    touch "${STUB_LOG}"
     cat >"${TEST_TMP}/config.toml" <<TOML
 [source]
 full_dir = "${TEST_TMP}/full"
@@ -33,9 +29,9 @@ version = "v0.1.1"
 [galleria]
 version = "v0.0.2"
 [deploy]
-rclone_conf = "${TEST_TMP}/rclone.conf"
-pics_remote = "test-pics"
-site_remote = "test-site"
+storage_host = "storage.example.test"
+pics_zone = "test-pics"
+site_zone = "test-site"
 TOML
     export MARCUSTACK_CONFIG="${TEST_TMP}/config.toml"
     export PATH="${TEST_TMP}/bin:${PATH}"
@@ -63,5 +59,5 @@ teardown() {
 
 @test "pipeline does not upload when verification fails" {
     run bash "${REPO_ROOT}/scripts/pipeline.sh"
-    [[ "$status" -ne 0 ]] || ! grep -q rclone "${STUB_LOG}"
+    [[ "$status" -ne 0 ]]
 }

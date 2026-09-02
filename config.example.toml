@@ -28,15 +28,15 @@ version = "v0.1.1"
 
 [galleria]
 # Git tag run via `uv tool run`, pinned for the same reason.
-version = "v0.0.2"
+version = "v0.0.3"
 
 [deploy]
-# rclone config file holding one remote per storage zone.
-# Lives outside the repository; marcustack passes the path and never
-# reads the contents.
-rclone_conf = "/home/you/.config/marcustack/rclone.conf"
-# rclone remote names, as written in that file.
-# pics_remote receives pics/COLLECTION/original and display.
-# site_remote receives everything else.
-pics_remote = "pics"
-site_remote = "site"
+# Credentials are found by convention at
+# ~/.config/marcustack/galleries/COLLECTION_NAME/pics.hdr and
+# site.hdr, one AccessKey header line each.
+# marcustack passes those paths to curl and never reads them.
+# Bunny storage endpoint for both zones, from the API/HTTP pane.
+storage_host = "storage.bunnycdn.com"
+# Storage zone names for this gallery.
+pics_zone = "your-pics-zone"
+site_zone = "your-site-zone"
