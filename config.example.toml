@@ -1,0 +1,42 @@
+# marcustack configuration example.
+# Copy to config.toml and fill in your values.
+# config.toml is per-machine and gitignored.
+# It holds paths and counts only, never credentials.
+
+[source]
+# Local directory containing the full-resolution photos.
+full_dir = "/path/to/photos/full"
+# Local directory containing the web-compressed photos.
+web_dir = "/path/to/photos/web"
+# Number of photos expected in each collection.
+expected_count = 0
+
+[output]
+# Site root. normpic writes its manifests and symlink trees under
+# pics/COLLECTION/original and pics/COLLECTION/display here, and
+# galleria writes gallery/ and its derived renditions beside them.
+# Relative paths resolve against the repository root.
+site_dir = "_build"
+# Collection name passed to normpic, used in generated filenames.
+# One name for both collections, so entries pair on relative_path.
+collection_name = "wedding"
+
+[normpic]
+# Git tag installed by `just install-normpic`.
+# Pinned so parallel development upstream cannot change what runs.
+version = "v0.1.1"
+
+[galleria]
+# Git tag run via `uv tool run`, pinned for the same reason.
+version = "v0.0.1"
+
+[deploy]
+# rclone config file holding one remote per storage zone.
+# Lives outside the repository; marcustack passes the path and never
+# reads the contents.
+rclone_conf = "/home/you/.config/marcustack/rclone.conf"
+# rclone remote names, as written in that file.
+# pics_remote receives pics/COLLECTION/original and display.
+# site_remote receives everything else.
+pics_remote = "pics"
+site_remote = "site"
