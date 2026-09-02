@@ -43,16 +43,22 @@ load_config() {
     fi
 
     export CFG_FULL_DIR CFG_WEB_DIR CFG_EXPECTED_COUNT
-    export CFG_MANIFEST_DIR CFG_COLLECTION_NAME
+    export CFG_SITE_DIR CFG_COLLECTION_NAME CFG_GALLERIA_VERSION
+    export CFG_RCLONE_CONF CFG_PICS_REMOTE CFG_SITE_REMOTE
 
     CFG_FULL_DIR="$(_cfg_abs "$(_cfg_get "${file}" source full_dir)")"
     CFG_WEB_DIR="$(_cfg_abs "$(_cfg_get "${file}" source web_dir)")"
     CFG_EXPECTED_COUNT="$(_cfg_get "${file}" source expected_count)"
-    CFG_MANIFEST_DIR="$(_cfg_abs "$(_cfg_get "${file}" output manifest_dir)")"
+    CFG_SITE_DIR="$(_cfg_abs "$(_cfg_get "${file}" output site_dir)")"
+    CFG_GALLERIA_VERSION="$(_cfg_get "${file}" galleria version)"
+    CFG_RCLONE_CONF="$(_cfg_abs "$(_cfg_get "${file}" deploy rclone_conf)")"
+    CFG_PICS_REMOTE="$(_cfg_get "${file}" deploy pics_remote)"
+    CFG_SITE_REMOTE="$(_cfg_get "${file}" deploy site_remote)"
     CFG_COLLECTION_NAME="$(_cfg_get "${file}" output collection_name)"
 
     for key in full_dir web_dir expected_count \
-        manifest_dir collection_name; do
+        site_dir collection_name galleria_version \
+        rclone_conf pics_remote site_remote; do
         value="CFG_${key^^}"
         [[ -z "${!value}" ]] && missing+=("${key}")
     done

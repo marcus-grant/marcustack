@@ -9,13 +9,22 @@ setup() {
 full_dir = "FULL"
 web_dir = "WEB"
 expected_count = 3
-
 [output]
-manifest_dir = "OUT"
+site_dir = "OUT"
 collection_name = "test-wedding"
+[normpic]
+version = "v0.1.1"
+[galleria]
+version = "v0.0.1"
+[deploy]
+rclone_conf = "RCONF"
+pics_remote = "test-pics"
+site_remote = "test-site"
 TOML
     sed -i "s|FULL|${TEST_TMP}/full|; s|WEB|${TEST_TMP}/web|; \
-s|OUT|${TEST_TMP}/out|" "${TEST_TMP}/config.toml"
+s|OUT|${TEST_TMP}/out|; s|RCONF|${TEST_TMP}/rclone.conf|" \
+        "${TEST_TMP}/config.toml"
+    touch "${TEST_TMP}/rclone.conf"
 }
 
 teardown() {
@@ -32,7 +41,7 @@ teardown() {
     [[ "$CFG_FULL_DIR" == "${TEST_TMP}/full" ]]
     [[ "$CFG_WEB_DIR" == "${TEST_TMP}/web" ]]
     [[ "$CFG_EXPECTED_COUNT" == "3" ]]
-    [[ "$CFG_MANIFEST_DIR" == "${TEST_TMP}/out" ]]
+    [[ "$CFG_SITE_DIR" == "${TEST_TMP}/out" ]]
     [[ "$CFG_COLLECTION_NAME" == "test-wedding" ]]
 }
 
@@ -74,11 +83,29 @@ teardown() {
         "${TEST_TMP}/config.toml"
     source scripts/lib/config.sh
     load_config "${TEST_TMP}/config.toml"
-    [[ "$CFG_MANIFEST_DIR" == "$(git rev-parse --show-toplevel)/_build/test-out" ]]
+    [[ "$CFG_SITE_DIR" == "$(git rev-parse --show-toplevel)/_build/test-out" ]]
 }
 
 @test "load_config leaves an absolute path unchanged" {
     source scripts/lib/config.sh
     load_config "${TEST_TMP}/config.toml"
-    [[ "$CFG_MANIFEST_DIR" == "${TEST_TMP}/out" ]]
+    [[ "$CFG_SITE_DIR" == "${TEST_TMP}/out" ]]
+}
+
+@test "load_config exposes site_dir and deploy values" {
+    source scripts/lib/config.sh
+    load_config "${TEST_TMP}/config.toml"
+    [[ "$CFG_SITE_DIR" == "${TEST_TMP}/out" ]]
+    [[ "$CFG_GALLERIA_VERSION" == "v0.0.1" ]]
+    [[ "$CFG_RCLONE_CONF" == "${TEST_TMP}/rclone.conf" ]]
+    [[ "$CFG_PICS_REMOTE" == "test-pics" ]]
+    [[ "$CFG_SITE_REMOTE" == "test-site" ]]
+}
+
+@test "load_config fails naming a missing site_dir" {
+    sed -i '/^site_dir/d' "${TEST_TMP}/config.toml"
+    source scripts/lib/config.sh
+    run load_config "${TEST_TMP}/config.toml"
+    [[ "$status" -ne 0 ]]
+    [[ "$output" == *"site_dir"* ]]
 }
