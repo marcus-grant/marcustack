@@ -9,9 +9,13 @@ default:
 test:
     bats test/
 
+# Run one bats file, e.g. `just t test/verify.bats`
+t FILE:
+    bats "{{FILE}}"
+
 # Lint shell scripts (extend paths as they appear)
 lint:
-    shellcheck scripts/lib/*.sh scripts/pipeline.sh
+    shellcheck scripts/lib/*.sh scripts/pipeline.sh test/*.sh
 
 # Wipe build outputs and run history
 clean:
