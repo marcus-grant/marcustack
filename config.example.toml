@@ -1,6 +1,6 @@
 # marcustack configuration example.
-# Copy to config.toml and fill in your values.
-# config.toml is per-machine and gitignored.
+# Copy to ~/.config/marcustack/config.toml and fill in your values.
+# Override the location with MARCUSTACK_CONFIG.
 # It holds paths and counts only, never credentials.
 
 [source]
@@ -28,7 +28,7 @@ version = "v0.1.1"
 
 [galleria]
 # Git tag run via `uv tool run`, pinned for the same reason.
-version = "v0.0.1"
+version = "v0.0.2"
 
 [deploy]
 # rclone config file holding one remote per storage zone.

@@ -15,7 +15,7 @@ collection_name = "test-wedding"
 [normpic]
 version = "v0.1.1"
 [galleria]
-version = "v0.0.1"
+version = "v0.0.2"
 [deploy]
 rclone_conf = "RCONF"
 pics_remote = "test-pics"
@@ -96,7 +96,7 @@ teardown() {
     source scripts/lib/config.sh
     load_config "${TEST_TMP}/config.toml"
     [[ "$CFG_SITE_DIR" == "${TEST_TMP}/out" ]]
-    [[ "$CFG_GALLERIA_VERSION" == "v0.0.1" ]]
+    [[ "$CFG_GALLERIA_VERSION" == "v0.0.2" ]]
     [[ "$CFG_RCLONE_CONF" == "${TEST_TMP}/rclone.conf" ]]
     [[ "$CFG_PICS_REMOTE" == "test-pics" ]]
     [[ "$CFG_SITE_REMOTE" == "test-site" ]]

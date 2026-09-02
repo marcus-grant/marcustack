@@ -31,7 +31,7 @@ check: lint test
 # Install the pinned normpic release
 install-normpic:
     uv tool install --force \
-      "git+https://github.com/marcus-grant/normpic@$(grep -A2 '\[normpic\]' config.toml | grep version | cut -d'"' -f2)"
+      "git+https://github.com/marcus-grant/normpic@$(grep -A2 '\[normpic\]' "${MARCUSTACK_CONFIG:-${XDG_CONFIG_HOME:-${HOME}/.config}/marcustack/config.toml}" | grep version | cut -d'"' -f2)"
 
 # Run the gallery pipeline
 pipeline:

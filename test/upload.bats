@@ -79,3 +79,10 @@ up() {
     run up
     [[ -f "${PICS_DEST}/pics/test wedding/original/pic3.jpg" ]]
 }
+
+@test "site sync leaves files outside its scope alone" {
+    echo legacy >"${SITE_DEST}/about.html"
+    run up
+    [[ "$status" -eq 0 ]]
+    [[ -f "${SITE_DEST}/about.html" ]]
+}

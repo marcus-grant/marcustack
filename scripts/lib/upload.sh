@@ -26,8 +26,14 @@ upload_site() {
             "${pics}/${kind}" \
             "${pics_remote}/pics/${collection}/${kind}"
     done
+    for kind in preview thumb; do
+        rclone --config "${conf}" sync -v \
+            "${pics}/${kind}" \
+            "${site_remote}/pics/${collection}/${kind}"
+    done
     rclone --config "${conf}" sync -v \
-        --exclude "/pics/${collection}/original/**" \
-        --exclude "/pics/${collection}/display/**" \
-        "${site}" "${site_remote}"
+        "${site}/gallery/${collection}" \
+        "${site_remote}/gallery/${collection}"
+    rclone --config "${conf}" copyto -v \
+        "${site}/index.html" "${site_remote}/index.html"
 }
