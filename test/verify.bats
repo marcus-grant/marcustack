@@ -32,7 +32,7 @@ teardown() {
 }
 
 @test "verify_site fails when index differs from page1" {
-    echo "<html>drift</html>" >"${TEST_TMP}/site/index.html"
+    echo "<html>drift</html>" >"${TEST_TMP}/site/gallery/test wedding/index.html"
     run verify_site "${TEST_TMP}/site" "test wedding" 3
     [[ "$status" -ne 0 ]]
     [[ "$output" == *"index.html"* ]]

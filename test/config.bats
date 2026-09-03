@@ -98,7 +98,7 @@ teardown() {
     [[ "$CFG_STORAGE_HOST" == "storage.example.test" ]]
     [[ "$CFG_PICS_ZONE" == "test-pics" ]]
     [[ "$CFG_SITE_ZONE" == "test-site" ]]
-    [[ "$CFG_PICS_HDR" == */galleries/test-wedding/pics.hdr ]]
+    [[ "$CFG_PICS_HDR" == */gallery/pics.hdr ]]
 }
 
 @test "load_config fails naming a missing site_dir" {

@@ -64,7 +64,7 @@ verify_site() {
         echo "actual ${actual}, expected ${expected}" >&2
         return 1
     fi
-    if ! cmp -s "${site}/index.html" "${pages}/page1.html"; then
+    if ! cmp -s "${pages}/index.html" "${pages}/page1.html"; then
         echo "index.html differs from ${pages}/page1.html" >&2
         return 1
     fi
@@ -91,4 +91,3 @@ verify_pairing() {
         return 1
     fi
 }
-

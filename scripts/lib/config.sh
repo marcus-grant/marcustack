@@ -57,9 +57,9 @@ load_config() {
     CFG_SITE_ZONE="$(_cfg_get "${file}" deploy site_zone)"
     CFG_COLLECTION_NAME="$(_cfg_get "${file}" output collection_name)"
     local _hdr_dir
-    _hdr_dir="${XDG_CONFIG_HOME:-${HOME}/.config}/marcustack/galleries"
-    CFG_PICS_HDR="${_hdr_dir}/${CFG_COLLECTION_NAME}/pics.hdr"
-    CFG_SITE_HDR="${_hdr_dir}/${CFG_COLLECTION_NAME}/site.hdr"
+    _hdr_dir="${XDG_CONFIG_HOME:-${HOME}/.config}/marcustack/gallery"
+    CFG_PICS_HDR="${_hdr_dir}/pics.hdr"
+    CFG_SITE_HDR="${_hdr_dir}/site.hdr"
 
     for key in full_dir web_dir expected_count \
         site_dir collection_name galleria_version \

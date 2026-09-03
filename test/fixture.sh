@@ -36,5 +36,5 @@ fixture_site_tree() {
     _fixture_manifest "${pics}/original" "${collection}" "${count}"
     _fixture_manifest "${pics}/display" "${collection}" "${count}"
     echo "<html>page1</html>" >"${pages}/page1.html"
-    cp "${pages}/page1.html" "${dir}/index.html"
+    cp "${pages}/page1.html" "${pages}/index.html"
 }
