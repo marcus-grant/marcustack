@@ -43,16 +43,27 @@ load_config() {
     fi
 
     export CFG_FULL_DIR CFG_WEB_DIR CFG_EXPECTED_COUNT
-    export CFG_MANIFEST_DIR CFG_COLLECTION_NAME
+    export CFG_SITE_DIR CFG_COLLECTION_NAME CFG_GALLERIA_VERSION
+    export CFG_STORAGE_HOST CFG_PICS_ZONE CFG_SITE_ZONE
+    export CFG_PICS_HDR CFG_SITE_HDR
 
     CFG_FULL_DIR="$(_cfg_abs "$(_cfg_get "${file}" source full_dir)")"
     CFG_WEB_DIR="$(_cfg_abs "$(_cfg_get "${file}" source web_dir)")"
     CFG_EXPECTED_COUNT="$(_cfg_get "${file}" source expected_count)"
-    CFG_MANIFEST_DIR="$(_cfg_abs "$(_cfg_get "${file}" output manifest_dir)")"
+    CFG_SITE_DIR="$(_cfg_abs "$(_cfg_get "${file}" output site_dir)")"
+    CFG_GALLERIA_VERSION="$(_cfg_get "${file}" galleria version)"
+    CFG_STORAGE_HOST="$(_cfg_get "${file}" deploy storage_host)"
+    CFG_PICS_ZONE="$(_cfg_get "${file}" deploy pics_zone)"
+    CFG_SITE_ZONE="$(_cfg_get "${file}" deploy site_zone)"
     CFG_COLLECTION_NAME="$(_cfg_get "${file}" output collection_name)"
+    local _hdr_dir
+    _hdr_dir="${XDG_CONFIG_HOME:-${HOME}/.config}/marcustack/gallery"
+    CFG_PICS_HDR="${_hdr_dir}/pics.hdr"
+    CFG_SITE_HDR="${_hdr_dir}/site.hdr"
 
     for key in full_dir web_dir expected_count \
-        manifest_dir collection_name; do
+        site_dir collection_name galleria_version \
+        storage_host pics_zone site_zone; do
         value="CFG_${key^^}"
         [[ -z "${!value}" ]] && missing+=("${key}")
     done

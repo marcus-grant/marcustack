@@ -9,9 +9,13 @@ default:
 test:
     bats test/
 
+# Run one bats file, e.g. `just t test/verify.bats`
+t FILE:
+    bats "{{FILE}}"
+
 # Lint shell scripts (extend paths as they appear)
 lint:
-    shellcheck scripts/lib/*.sh scripts/pipeline.sh
+    shellcheck scripts/lib/*.sh scripts/pipeline.sh test/*.sh
 
 # Wipe build outputs and run history
 clean:
@@ -19,15 +23,15 @@ clean:
 
 # Deploy the gallery pipeline (not yet implemented)
 deploy:
-    @echo "deploy: not yet implemented. See doc/v01.md and doc/TODO.md."
-    @exit 1
+    MARCUSTACK_UPLOAD=1 bash scripts/pipeline.sh
+
 # Run the full pre-commit gate
 check: lint test
 
 # Install the pinned normpic release
 install-normpic:
     uv tool install --force \
-      "git+https://github.com/marcus-grant/normpic@$(grep -A2 '\[normpic\]' config.toml | grep version | cut -d'"' -f2)"
+      "git+https://github.com/marcus-grant/normpic@$(grep -A2 '\[normpic\]' "${MARCUSTACK_CONFIG:-${XDG_CONFIG_HOME:-${HOME}/.config}/marcustack/config.toml}" | grep version | cut -d'"' -f2)"
 
 # Run the gallery pipeline
 pipeline:

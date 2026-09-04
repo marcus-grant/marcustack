@@ -57,6 +57,24 @@ The verify stage asserts it, so an upstream change fails loudly:
   `preview`, `thumb`.
 - All links relative; galleria knows nothing of buckets or hostnames.
 
+Recorded shortfalls, deliberate for this slice:
+
+- Upload is sequential, one curl per file; a 200 Mbit link runs at
+  a quarter utilization.
+  Parallel PUTs with a bounded worker count are the known fix.
+- No progress output during upload; the operator watches the zone
+  fill from a second terminal.
+- rclone over FTP was built first and abandoned: rclone's FTP
+  client desyncs against Bunny's daemon, every transfer erroring
+  after its 226 reply.
+  The field check that would have caught it in minutes ran only
+  after hours were spent; transport pairings get a real-transfer
+  smoke test before code from now on.
+- Nothing records what is on the CDN; the zone listing is the only
+  truth.
+  A deployment record is now needed, not deferred: pics is
+  write-once, so mistakes accumulate there permanently.
+
 Open, decided against the code and brought to the maintainer:
 
 - Whether upload is idempotent, and what "already uploaded" means.

@@ -4,7 +4,7 @@ _build/
 # stage run history
 runs/
 
-# per-machine config (template is committed as config.toml.example)
+# per-machine config (template is committed as config.example.toml)
 config.toml
 
 # editor / OS

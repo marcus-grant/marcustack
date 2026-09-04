@@ -66,6 +66,11 @@ Never copy one here; a copy is a second definition and will drift.
 When a failure traces upstream, file it upstream.
 Do not add compensating logic here.
 
+An external service proving a connection possible doesn't mean anything.
+This project burned hours trying to make rclone work with Bunny.net.
+Going off only the simplistic notion that getting controls to work meant
+transfers would work fine when they never will.
+
 ## Ways of working
 
 Plan, review, implement, verify, submit.

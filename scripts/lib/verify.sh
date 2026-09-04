@@ -44,6 +44,37 @@ verify_collection() {
     fi
 }
 
+# Verify the site tree galleria and normpic wrote under SITE_DIR.
+# Args: site_dir collection expected_count.
+# Exits non-zero naming the first failure.
+verify_site() {
+    local site="$1" collection="$2" expected="$3"
+    local pics="${site}/pics/${collection}"
+    local pages="${site}/gallery/${collection}"
+    local kind actual broken
+    for kind in original display preview thumb; do
+        if [[ ! -d "${pics}/${kind}" ]]; then
+            echo "missing rendition dir: ${pics}/${kind}" >&2
+            return 1
+        fi
+    done
+    actual="$(find "${pages}/pic" -name '*.html' | wc -l)"
+    if [[ "${actual}" -ne "${expected}" ]]; then
+        echo "per-photo page count mismatch in ${pages}/pic" >&2
+        echo "actual ${actual}, expected ${expected}" >&2
+        return 1
+    fi
+    if ! cmp -s "${pages}/index.html" "${pages}/page1.html"; then
+        echo "index.html differs from ${pages}/page1.html" >&2
+        return 1
+    fi
+    broken="$(find "${pics}" -xtype l | wc -l)"
+    if [[ "${broken}" -ne 0 ]]; then
+        echo "broken symlinks under ${pics}: ${broken}" >&2
+        return 1
+    fi
+}
+
 # Verify both collections pair on relative_path.
 # Exits non-zero reporting how many entries failed to pair.
 verify_pairing() {
@@ -52,8 +83,8 @@ verify_pairing() {
 
     unpaired="$(diff \
         <(jq -r '.pic[].relative_path' "${full}" | sort) \
-        <(jq -r '.pic[].relative_path' "${web}" | sort) | grep -c '^[<>]' \
-        || true)"
+        <(jq -r '.pic[].relative_path' "${web}" | sort) | grep -c '^[<>]' ||
+        true)"
 
     if [[ "${unpaired}" -ne 0 ]]; then
         echo "collections do not pair: ${unpaired} unpaired entries" >&2
