@@ -23,8 +23,8 @@ clean:
 
 # Deploy the gallery pipeline (not yet implemented)
 deploy:
-    @echo "deploy: not yet implemented. See doc/v01.md and doc/TODO.md."
-    @exit 1
+    MARCUSTACK_UPLOAD=1 bash scripts/pipeline.sh
+
 # Run the full pre-commit gate
 check: lint test
 

@@ -86,44 +86,83 @@ Bucket configuration and edge routing belong to marcustack.
 Galleria emits relative paths and knows nothing of buckets or
 hostnames.
 
-## Deploy tail
+## Deployment
 
 marcustack owns the path from galleria's output to the CDN.
+The wedding gallery is live through it.
 
 Settled:
 
 - The storage split above.
 - Variant names in config and edge routing are `original` and
   `display`, matching galleria's rendition kinds.
+- Transport is Bunny's HTTP storage API via curl.
+  rclone over FTP is ruled out: its FTP client desyncs against
+  Bunny's daemon and every transfer errors after the 226 reply.
+  Zone listings return per-file SHA256, so idempotence is
+  content-true without a local record.
+- Two zones total, shared by every gallery collection; each
+  collection is a subtree keyed by collection name.
+  Zone-per-gallery is rejected as needless.
+- Edge rules on the site pull zone, both collection-generic:
+  - 302 `*/pics/*/original/*` and `*/pics/*/display/*` to the pics
+    pull zone, full path preserved.
+  - 301 `*/gallery/*` without an extension to its trailing-slash
+    form, because the storage origin serves directory indexes
+    without redirecting and relative links then resolve one level
+    shallow.
+  - Trap, learned live: rule conditions match the full URL
+    including hostname, so a bare `*.*` negation matches every
+    request via the hostname's dots.
+    Anchor negative patterns past the host: `*/gallery/*.*`.
+
+Target architecture, recorded, ordering open:
+
+- Each galleria collection builds into its own tree and deploys as
+  a subtree of the same two zones.
+- personal-site (11ty) deploys to its own third zone when it
+  resumes; temporary by design.
+- Possible end state: all of marcusgrant.se on exactly two zones,
+  one priced for heavy write-rarely assets, one fast for HTML, JS,
+  CSS, JSON, and light renditions.
+  Documented as a possibility, not scheduled.
+- `marcusgrant.se` becomes the base URL for everything; the
+  gallery appends `gallery/`.
 
 Post-MVP, dual-deploy migration:
 
+- The legacy `galleries/` path has live spontaneous traffic from
+  expected regions, which is the argument for a deprecation year
+  rather than a fast cut.
 - Galleria emits one build and stays ignorant of the migration.
 - marcustack copies that output to two destinations.
-- Permanent home: a new deploy bucket plus edge routing, plain
-  output, no banner.
-- Legacy endpoint: the same output with a deprecation banner injected
-  by a script that adds a fixed HTML snippet to the relevant HTML
-  files.
-  Default assumption is every grid pagination page, or simply every
-  HTML file in the legacy copy.
-  The exact target set is decided against the code when the item is
-  live.
+- Permanent home: `marcusgrant.se`, plain output, no banner.
+- Legacy endpoint: the same output with a deprecation banner
+  injected by a script that adds a fixed HTML snippet to the
+  relevant HTML files.
+  Default assumption is every grid pagination page, or simply
+  every HTML file in the legacy copy.
+  The exact target set is decided against the code when the item
+  is live.
 - The banner announces the scheduled deprecation, links to the
   permanent home, and tells visitors to bookmark or write down the
   new address.
 - The legacy endpoint and its bucket stay live roughly one year,
   then both are deleted.
+- Migration ordering is the open decision; nothing here is
+  sequenced yet.
 
 Open, cross-project: the site navbar.
 
 - Galleria's pages sit at two depths, `gallery/COLLECTION/` and
   `gallery/COLLECTION/pic/`, and all links are relative.
-- A verbatim fragment cannot carry links that resolve at both depths.
+- A verbatim fragment cannot carry links that resolve at both
+  depths.
   A template override puts two projects in authority over one
   template set.
-- Post-processing is the only mechanism that can emit depth-correct
-  links per file, and it reuses the banner injection mechanism.
+- Post-processing is the only mechanism that can emit
+  depth-correct links per file, and it reuses the banner injection
+  mechanism.
 - Open: whether one injector handles navbar and banner or two, and
   whether retro-theme or personal-site owns the navbar markup.
 
