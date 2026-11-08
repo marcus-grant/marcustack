@@ -19,6 +19,13 @@ sum_of() {
     sha256sum <"$1" | cut -d' ' -f1
 }
 
+run_upload_site_stubbed() {
+    _upload_dir() { echo "$3 $4 $5 $6 $7" >>"${TEST_TMP}/calls"; }
+    touch "${TEST_TMP}/p.hdr" "${TEST_TMP}/s.hdr"
+    upload_site "${TEST_TMP}/p.hdr" "${TEST_TMP}/s.hdr" host \
+        pz sz /site c
+}
+
 @test "plan puts every file against an empty listing" {
     : >"${LISTING}"
     run upload_plan_dir "${TEST_TMP}/local" "${LISTING}" 0 0
@@ -74,4 +81,23 @@ sum_of() {
     : >"${LISTING}"
     run upload_plan_dir "${TEST_TMP}/local" "${LISTING}" 0 0
     [[ "$output" == *"put my pic.jpg"* ]]
+}
+
+@test "upload_site mirrors gallery pages to galleries" {
+    run_upload_site_stubbed
+    run cat "${TEST_TMP}/calls"
+    [[ "${output}" == *"sz /site/gallery/c gallery/c 0 0"* ]]
+    [[ "${output}" == *"sz /site/gallery/c/pic gallery/c/pic 0 0"* ]]
+    [[ "${output}" == *"sz /site/gallery/c galleries/c 0 0"* ]]
+    [[ "${output}" == *"sz /site/gallery/c/pic galleries/c/pic 0 0"* ]]
+}
+
+@test "upload_site sends only gallery pages under galleries" {
+    run_upload_site_stubbed
+    run awk '$3 ~ /^galleries\// && $2 ~ /^\/site\/gallery\//' \
+        "${TEST_TMP}/calls"
+    [[ "$(wc -l <<<"${output}")" -eq 2 ]]
+    run awk '$3 ~ /^galleries\// && $2 !~ /^\/site\/gallery\//' \
+        "${TEST_TMP}/calls"
+    [[ -z "${output}" ]]
 }

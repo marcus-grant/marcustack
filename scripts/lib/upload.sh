@@ -124,9 +124,12 @@ upload_site() {
         _upload_dir "${site_hdr}" "${host}" "${site_zone}" \
             "${pics}/${kind}" "pics/${collection}/${kind}" 0 0
     done
-    _upload_dir "${site_hdr}" "${host}" "${site_zone}" \
-        "${site}/gallery/${collection}" "gallery/${collection}" 0 0
-    _upload_dir "${site_hdr}" "${host}" "${site_zone}" \
-        "${site}/gallery/${collection}/pic" \
-        "gallery/${collection}/pic" 0 0
+    local prefix
+    for prefix in gallery galleries; do
+        _upload_dir "${site_hdr}" "${host}" "${site_zone}" \
+            "${site}/gallery/${collection}" "${prefix}/${collection}" 0 0
+        _upload_dir "${site_hdr}" "${host}" "${site_zone}" \
+            "${site}/gallery/${collection}/pic" \
+            "${prefix}/${collection}/pic" 0 0
+    done
 }
