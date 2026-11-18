@@ -108,3 +108,32 @@ teardown() {
     [[ "$status" -ne 0 ]]
     [[ "$output" == *"site_dir"* ]]
 }
+
+@test "load_config exposes stall_seconds when set" {
+    sed -i '/^\[deploy\]/a stall_seconds = 30' "${TEST_TMP}/config.toml"
+    source scripts/lib/config.sh
+    load_config "${TEST_TMP}/config.toml"
+    [[ "$CFG_STALL_SECONDS" == "30" ]]
+}
+
+@test "load_config defaults stall_seconds to 60 when absent" {
+    source scripts/lib/config.sh
+    load_config "${TEST_TMP}/config.toml"
+    [[ "$CFG_STALL_SECONDS" == "60" ]]
+}
+
+@test "load_config fails naming a non-integer stall_seconds" {
+    sed -i '/^\[deploy\]/a stall_seconds = abc' "${TEST_TMP}/config.toml"
+    source scripts/lib/config.sh
+    run load_config "${TEST_TMP}/config.toml"
+    [[ "$status" -ne 0 ]]
+    [[ "$output" == *"stall_seconds"* ]]
+}
+
+@test "load_config fails naming a zero stall_seconds" {
+    sed -i '/^\[deploy\]/a stall_seconds = 0' "${TEST_TMP}/config.toml"
+    source scripts/lib/config.sh
+    run load_config "${TEST_TMP}/config.toml"
+    [[ "$status" -ne 0 ]]
+    [[ "$output" == *"stall_seconds"* ]]
+}

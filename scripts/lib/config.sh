@@ -45,7 +45,7 @@ load_config() {
     export CFG_FULL_DIR CFG_WEB_DIR CFG_EXPECTED_COUNT
     export CFG_SITE_DIR CFG_COLLECTION_NAME CFG_GALLERIA_VERSION
     export CFG_STORAGE_HOST CFG_PICS_ZONE CFG_SITE_ZONE
-    export CFG_PICS_HDR CFG_SITE_HDR
+    export CFG_PICS_HDR CFG_SITE_HDR CFG_STALL_SECONDS
 
     CFG_FULL_DIR="$(_cfg_abs "$(_cfg_get "${file}" source full_dir)")"
     CFG_WEB_DIR="$(_cfg_abs "$(_cfg_get "${file}" source web_dir)")"
@@ -56,6 +56,8 @@ load_config() {
     CFG_PICS_ZONE="$(_cfg_get "${file}" deploy pics_zone)"
     CFG_SITE_ZONE="$(_cfg_get "${file}" deploy site_zone)"
     CFG_COLLECTION_NAME="$(_cfg_get "${file}" output collection_name)"
+    CFG_STALL_SECONDS="$(_cfg_get "${file}" deploy stall_seconds)"
+    : "${CFG_STALL_SECONDS:=60}"
     local _hdr_dir
     _hdr_dir="${XDG_CONFIG_HOME:-${HOME}/.config}/marcustack/gallery"
     CFG_PICS_HDR="${_hdr_dir}/pics.hdr"
@@ -70,6 +72,11 @@ load_config() {
 
     if [[ ${#missing[@]} -gt 0 ]]; then
         echo "config ${file} missing keys: ${missing[*]}" >&2
+        return 1
+    fi
+
+    if [[ ! "${CFG_STALL_SECONDS}" =~ ^[1-9][0-9]*$ ]]; then
+        echo "config ${file}: stall_seconds must be a positive integer" >&2
         return 1
     fi
 

@@ -40,3 +40,6 @@ storage_host = "storage.bunnycdn.com"
 # Storage zone names for this gallery.
 pics_zone = "your-pics-zone"
 site_zone = "your-site-zone"
+# Seconds a request may stay stalled before it is aborted.
+# Optional; 60 when absent.
+# stall_seconds = 60
