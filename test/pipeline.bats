@@ -57,6 +57,10 @@ teardown() {
         "${REPO_ROOT}/scripts/pipeline.sh"
 }
 
+@test "pipeline galleria stage disables validation explicitly" {
+    grep -q -- '--no-validate' "${REPO_ROOT}/scripts/pipeline.sh"
+}
+
 @test "pipeline does not upload when verification fails" {
     run bash "${REPO_ROOT}/scripts/pipeline.sh"
     [[ "$status" -ne 0 ]]

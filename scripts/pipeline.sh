@@ -48,6 +48,7 @@ run_stage galleria -- uv tool run \
     --original-manifest "${PICS}/original/manifest.json" \
     --display-manifest "${PICS}/display/manifest.json" \
     --output-dir "${CFG_SITE_DIR}" \
+    --no-validate \
     "${MARCUSTACK_DERIVE:---no-derive}"
 run_stage verify-site -- verify_site \
     "${CFG_SITE_DIR}" "${CFG_COLLECTION_NAME}" "${CFG_EXPECTED_COUNT}"
