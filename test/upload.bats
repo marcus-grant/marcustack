@@ -101,3 +101,110 @@ run_upload_site_stubbed() {
         "${TEST_TMP}/calls"
     [[ -z "${output}" ]]
 }
+
+make_curl_stub() {
+    mkdir -p "${TEST_TMP}/bin"
+    cat >"${TEST_TMP}/bin/curl" <<'STUB'
+#!/usr/bin/env bash
+out=""
+while [[ $# -gt 0 ]]; do
+    [[ "$1" == "-o" ]] && out="$2"
+    shift
+done
+[[ -n "${out}" ]] && printf '%s' "${STUB_BODY:-}" >"${out}"
+printf '%s' "${STUB_CODE:-200}"
+exit "${STUB_RC:-0}"
+STUB
+    chmod +x "${TEST_TMP}/bin/curl"
+    PATH="${TEST_TMP}/bin:${PATH}"
+}
+
+@test "_bunny_ls lists files only on 200" {
+    make_curl_stub
+    export STUB_CODE=200
+    export STUB_BODY='[{"IsDirectory":false,"ObjectName":"a.jpg","Checksum":"ABC"},{"IsDirectory":true,"ObjectName":"d"}]'
+    run _bunny_ls hdr host secretzone some/path
+    [[ "$status" -eq 0 ]]
+    [[ "$output" == "ABC  a.jpg" ]]
+}
+
+@test "_bunny_ls fails naming the path and status on 401" {
+    make_curl_stub
+    export STUB_CODE=401
+    export STUB_BODY='{"Message":"Unauthorized"}'
+    run _bunny_ls hdr host secretzone some/path
+    [[ "$status" -ne 0 ]]
+    [[ "$output" == *"some/path"* ]]
+    [[ "$output" == *"401"* ]]
+    [[ "$output" != *"secretzone"* ]]
+    [[ "$output" != *"host"* ]]
+}
+
+@test "_bunny_ls fails naming the path when curl exits nonzero" {
+    make_curl_stub
+    export STUB_CODE=200
+    export STUB_BODY='[]'
+    export STUB_RC=7
+    run _bunny_ls hdr host secretzone some/path
+    [[ "$status" -ne 0 ]]
+    [[ "$output" == *"some/path"* ]]
+}
+
+@test "_upload_dir executes no plan when the listing fails" {
+    _bunny_ls() { return 1; }
+    _bunny_put() { echo "$4" >>"${TEST_TMP}/puts"; }
+    run _upload_dir hdr host zone "${TEST_TMP}/local" rdir 0 0
+    [[ "$status" -ne 0 ]]
+    [[ ! -s "${TEST_TMP}/puts" ]]
+}
+
+@test "_upload_dir stops at the first failed put" {
+    _bunny_ls() { :; }
+    _bunny_put() { echo "$4" >>"${TEST_TMP}/puts"; return 1; }
+    run _upload_dir hdr host zone "${TEST_TMP}/local" rdir 0 0
+    [[ "$status" -ne 0 ]]
+    [[ "$(wc -l <"${TEST_TMP}/puts")" -eq 1 ]]
+}
+
+@test "_upload_dir fails when a delete fails" {
+    _bunny_ls() { echo "abc  gone.jpg"; }
+    _bunny_put() { return 0; }
+    _bunny_rm() { return 1; }
+    run _upload_dir hdr host zone "${TEST_TMP}/local" rdir 0 0
+    [[ "$status" -ne 0 ]]
+}
+
+@test "upload_site stops at the first failing directory" {
+    _upload_dir() { echo "$5" >>"${TEST_TMP}/calls"; return 1; }
+    touch "${TEST_TMP}/p.hdr" "${TEST_TMP}/s.hdr"
+    run upload_site "${TEST_TMP}/p.hdr" "${TEST_TMP}/s.hdr" host \
+        pz sz /site c
+    [[ "$status" -ne 0 ]]
+    [[ "$(wc -l <"${TEST_TMP}/calls")" -eq 1 ]]
+}
+
+stage_upload_with_put() {
+    source scripts/lib/stage.sh
+    STAGE_RUN_DIR="${TEST_TMP}/run"
+    mkdir -p "${STAGE_RUN_DIR}" "${TEST_TMP}/site/pics/c/original"
+    echo x >"${TEST_TMP}/site/pics/c/original/x.jpg"
+    touch "${TEST_TMP}/p.hdr" "${TEST_TMP}/s.hdr"
+    _bunny_ls() { :; }
+    _bunny_rm() { return 0; }
+}
+
+@test "run_stage records failure when an upload put fails" {
+    stage_upload_with_put
+    _bunny_put() { return 1; }
+    run_stage upload -- upload_site "${TEST_TMP}/p.hdr" \
+        "${TEST_TMP}/s.hdr" host pz sz "${TEST_TMP}/site" c 2>/dev/null
+    [[ "$(cat "${STAGE_RUN_DIR}/upload.status")" == "failure" ]]
+}
+
+@test "run_stage records success when every upload put succeeds" {
+    stage_upload_with_put
+    _bunny_put() { return 0; }
+    run_stage upload -- upload_site "${TEST_TMP}/p.hdr" \
+        "${TEST_TMP}/s.hdr" host pz sz "${TEST_TMP}/site" c 2>/dev/null
+    [[ "$(cat "${STAGE_RUN_DIR}/upload.status")" == "success" ]]
+}
