@@ -62,8 +62,19 @@ Recorded shortfalls, deliberate for this slice:
 - Upload is sequential, one curl per file; a 200 Mbit link runs at
   a quarter utilization.
   Parallel PUTs with a bounded worker count are the known fix.
-- No progress output during upload; the operator watches the zone
-  fill from a second terminal.
+- No progress output during verification or upload.
+  - The last line on screen stays galleria's "generating static site",
+    - while marcustack stages run silently, which misreports the stage.
+  - Every stage prints a line when it starts.
+  - Upload prints each directory's:
+    - planned put, delete, and skip counts...
+    - before transferring, then done against planned as it goes.
+- normpic fails with "File exists" when the source collection
+  moves: stale links in `pics/COLLECTION/original` and `display`
+  point at the old path and are not replaced.
+  Workaround: remove those two trees, which hold only normpic
+  links and manifests, then rerun.
+  The fix belongs upstream in normpic; file it there.
 - rclone over FTP was built first and abandoned: rclone's FTP
   client desyncs against Bunny's daemon, every transfer erroring
   after its 226 reply.
