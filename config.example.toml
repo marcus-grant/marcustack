@@ -28,7 +28,7 @@ version = "v0.1.1"
 
 [galleria]
 # Git tag run via `uv tool run`, pinned for the same reason.
-version = "v0.0.3"
+version = "v0.0.4"
 
 [deploy]
 # Credentials are found by convention at
