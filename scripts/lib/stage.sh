@@ -15,11 +15,12 @@ run_stage() {
     fi
     shift
     [[ "${1:-}" == "--" ]] && shift
+    local start="${SECONDS}" outcome=failure
+    echo "stage ${name}: start" >&2
     if "$@"; then
-        echo "success" >"${STAGE_RUN_DIR}/${name}.status"
-    else
-        echo "stage failed: ${name}" >&2
-        echo "failure" >"${STAGE_RUN_DIR}/${name}.status"
+        outcome=success
     fi
+    echo "stage ${name}: ${outcome} ($((SECONDS - start))s)" >&2
+    echo "${outcome}" >"${STAGE_RUN_DIR}/${name}.status"
     return 0
 }
