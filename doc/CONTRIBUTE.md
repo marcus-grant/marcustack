@@ -173,80 +173,7 @@ Refer to work by branch name, never by ordinal.
 
 ## Quality assurance
 
-A gated, progressive hunt before submit.
-The green suite already proves mechanical correctness, so review only
-chases what tests cannot catch: a misread spec, a missing required
-thing, a false claim, a latent trap.
-Grade against the approved plan, starting from the summary before
-reading the repository.
-
-### Author's summary
-
-Subject, one sentence of what changed, pass or fail, and
-`git diff --stat`.
-The stat is required; scope drift is invisible in prose.
-
-### The ladder
-
-Cheapest first.
-Each rung runs only when its failure is possible for this change.
-
-- Summary against plan: watch overclaims and scope beyond the plan.
-- Scope from the stat: expected files, proportionate size.
-  Stop and flag a disproportionate diff before reading content.
-- Signatures by targeted grep: is the substantive change the specified
-  one?
-- Claims against ground truth, only when the summary makes a
-  falsifiable claim.
-- Completeness, only when tests discover set members dynamically and a
-  missing member would raise no failure.
-- Trap reasoning, only when correctness-bearing logic changed:
-  vacuous conditions, boundary inputs, one defect producing many
-  errors, misattributed errors.
-
-Shell adds its own trap class: a path with a space or glob character,
-an unquoted expansion, an exit code swallowed by a pipe, a variable
-empty rather than unset.
-Fixtures have tidy paths and will not surface these.
-`shellcheck` catches most, which is why it runs first.
-
-### Probe kit
-
-Around fifteen lines total, targets derived from the plan.
-
-- Grep assertions in changed test files, not just test names.
-- Grep source for the removed token; empty output is the proof.
-- Grep tests for the new symbol, confirming it is exercised.
-
-Use `grep -I --include='*.sh' --include='*.bats'`.
-
-These confirm the tests assert the right thing for the cases they
-name.
-Going past the author's chosen cases needs independent ground truth.
-
-### Deleting a rung
-
-When a failure mode recurs, push it into a suite assertion so it goes
-red on its own instead of costing a review pass.
-
-### The reviewer is not exempt
-
-An inferred hazard is a claim, not a finding, until checked against
-the code or the contract.
-Do not escalate one to the maintainer before reading the source that
-would confirm or dismiss it.
-If the spec or code answers a question, read it rather than asking.
-
-State a correction once and move on.
-Do not restate a corrected position as the original, or re-explain one
-fact in varying forms.
-
-### Sign-off
-
-Commits match the plan, scope is contained, claims check out, and the
-applicable rungs found nothing.
-Open items go back as surgical requests, not a direction to start
-over.
+Review before submit is defined in [QA.md](QA.md).
 
 ## Coordinating across roles
 
@@ -275,22 +202,6 @@ standard.
   file path in backticks and enough context to place it.
   A fence with no destination is incomplete.
 - A fence containing an inner fence uses five backticks outside.
-
-A dependency-ordered change is signed off per commit rather than as a
-unit: plan, sign off, implement, summarize, sign off, commit, next.
-Encode that ordering in its `doc/TODO.md` section with the reason each
-step precedes the next.
-
-### Manual acceptance run
-
-The suite proves correctness on generated fixtures, not behavior on
-real data.
-For changes touching the end-to-end path, run the pipeline on a real
-collection before final sign-off.
-Check what fixtures cannot: no dangling symlinks, output validates
-against the upstream schema, files open through the links, counts
-match config.
-This has caught producer drift that every fixture test passed.
 
 ### Communication
 
