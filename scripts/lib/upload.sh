@@ -64,6 +64,8 @@ _bunny_rm() {
 # Args: local_dir remote_listing_file skip_existing manifest_excluded.
 # Emits "put NAME", "del NAME", or "skip NAME" per file decision.
 # Pure: reads the filesystem and the listing, touches no network.
+# Exits 0; without the explicit return, the delete loop's last test
+# would leak its status.
 upload_plan_dir() {
     local ldir="$1" listing="$2" skip_existing="$3" exclude="$4"
     local name lsum rsum
@@ -99,32 +101,50 @@ upload_plan_dir() {
                 echo "del ${name}"
         done
     fi
+    return 0
 }
 
 # Execute a plan for one directory pair.
 # Args: hdr host zone ldir rdir skip_existing exclude stall_seconds.
-# Exits 1 at the first failed listing, put, or delete.
+# Prints to stderr one plan line, then one line per transfer.
+# Exits 1 at the first failed listing, planning, put, or delete.
 _upload_dir() {
     local hdr="$1" host="$2" zone="$3" ldir="$4" rdir="$5"
     local skip="$6" exclude="$7" stall="$8"
-    local listing action name rc=0
+    local listing plan action name rc=0 puts dels skips total i=0
     listing="$(mktemp)"
-    if _bunny_ls "${hdr}" "${host}" "${zone}" "${rdir}" \
+    plan="$(mktemp)"
+    if ! _bunny_ls "${hdr}" "${host}" "${zone}" "${rdir}" \
         "${stall}" >"${listing}"; then
+        rc=1
+    elif ! upload_plan_dir "${ldir}" "${listing}" \
+        "${skip}" "${exclude}" >"${plan}"; then
+        echo "upload ${rdir}: planning failed" >&2
+        rc=1
+    else
+        puts="$(grep -c '^put ' "${plan}" || true)"
+        dels="$(grep -c '^del ' "${plan}" || true)"
+        skips="$(grep -c '^skip ' "${plan}" || true)"
+        total=$((puts + dels))
+        echo "upload ${rdir}: put ${puts}, del ${dels}, skip ${skips}" >&2
         while read -r action name; do
             case "${action}" in
-            put) _bunny_put "${hdr}" "${host}" "${zone}" \
-                "${rdir}/${name}" "${ldir}/${name}" "${stall}" ||
-                { rc=1; break; } ;;
-            del) _bunny_rm "${hdr}" "${host}" "${zone}" \
-                "${rdir}/${name}" "${stall}" || { rc=1; break; } ;;
+            put)
+                i=$((i + 1))
+                echo "upload ${rdir}: put ${i}/${total} ${name}" >&2
+                _bunny_put "${hdr}" "${host}" "${zone}" \
+                    "${rdir}/${name}" "${ldir}/${name}" "${stall}" ||
+                    { rc=1; break; } ;;
+            del)
+                i=$((i + 1))
+                echo "upload ${rdir}: del ${i}/${total} ${name}" >&2
+                _bunny_rm "${hdr}" "${host}" "${zone}" \
+                    "${rdir}/${name}" "${stall}" ||
+                    { rc=1; break; } ;;
             esac
-        done < <(upload_plan_dir "${ldir}" "${listing}" \
-            "${skip}" "${exclude}")
-    else
-        rc=1
+        done <"${plan}"
     fi
-    rm -f "${listing}"
+    rm -f "${listing}" "${plan}"
     return "${rc}"
 }
 

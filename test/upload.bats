@@ -248,3 +248,99 @@ stage_upload_with_put() {
     [[ "$(wc -l <"${TEST_TMP}/calls")" -eq 8 ]]
     [[ "$(grep -vc ' 7$' "${TEST_TMP}/calls")" -eq 0 ]]
 }
+
+@test "upload_plan_dir returns 0 for an all-skip directory" {
+    mkdir -p "${TEST_TMP}/one"
+    echo alpha >"${TEST_TMP}/one/a.jpg"
+    printf '%s  a.jpg\n' "$(sum_of "${TEST_TMP}/one/a.jpg")" >"${LISTING}"
+    run upload_plan_dir "${TEST_TMP}/one" "${LISTING}" 0 0
+    [[ "$status" -eq 0 ]]
+    [[ "$output" == "skip a.jpg" ]]
+}
+
+progress_scenario() {
+    printf '%s  a.jpg\n' "$(sum_of "${TEST_TMP}/local/a.jpg")" >"${LISTING}"
+    echo "abc  gone.jpg" >>"${LISTING}"
+    _bunny_ls() { cat "${LISTING}"; }
+    _bunny_put() { echo "did put ${4##*/}"; }
+    _bunny_rm() { echo "did del ${4##*/}"; }
+}
+
+@test "_upload_dir prints the plan line before any transfer line" {
+    progress_scenario
+    run _upload_dir hdr host zone "${TEST_TMP}/local" rdir 0 0 7
+    [[ "$status" -eq 0 ]]
+    [[ "${lines[0]}" == "upload rdir: put 1, del 1, skip 1" ]]
+}
+
+@test "_upload_dir numbers transfers in plan order" {
+    progress_scenario
+    run _upload_dir hdr host zone "${TEST_TMP}/local" rdir 0 0 7
+    [[ "${#lines[@]}" -eq 5 ]]
+    [[ "${lines[1]}" == "upload rdir: put 1/2 b.jpg" ]]
+    [[ "${lines[2]}" == "did put b.jpg" ]]
+    [[ "${lines[3]}" == "upload rdir: del 2/2 gone.jpg" ]]
+    [[ "${lines[4]}" == "did del gone.jpg" ]]
+}
+
+@test "_upload_dir prints only the plan line when all files skip" {
+    progress_scenario
+    {
+        printf '%s  a.jpg\n' "$(sum_of "${TEST_TMP}/local/a.jpg")"
+        printf '%s  b.jpg\n' "$(sum_of "${TEST_TMP}/local/b.jpg")"
+    } >"${LISTING}"
+    run _upload_dir hdr host zone "${TEST_TMP}/local" rdir 0 0 7
+    [[ "$status" -eq 0 ]]
+    [[ "$output" == "upload rdir: put 0, del 0, skip 2" ]]
+}
+
+@test "_upload_dir prints a filename containing a space whole" {
+    mkdir -p "${TEST_TMP}/sp"
+    echo x >"${TEST_TMP}/sp/my pic.jpg"
+    _bunny_ls() { :; }
+    _bunny_put() { :; }
+    run _upload_dir hdr host zone "${TEST_TMP}/sp" rdir 0 0 7
+    [[ "${lines[1]}" == "upload rdir: put 1/1 my pic.jpg" ]]
+}
+
+@test "_upload_dir prints no transfer line after a failed put" {
+    _bunny_ls() { :; }
+    _bunny_put() { return 1; }
+    run _upload_dir hdr host zone "${TEST_TMP}/local" rdir 0 0 7
+    [[ "$status" -ne 0 ]]
+    [[ "${lines[-1]}" == "upload rdir: put 1/2 a.jpg" ]]
+    [[ "$output" != *"2/2"* ]]
+}
+
+@test "_upload_dir output never contains the host or zone" {
+    progress_scenario
+    run _upload_dir hdr secrethost secretzone "${TEST_TMP}/local" rdir 0 0 7
+    [[ "$output" == *"upload rdir:"* ]]
+    [[ "$output" != *"secrethost"* ]]
+    [[ "$output" != *"secretzone"* ]]
+}
+
+@test "_upload_dir fails the directory when planning fails" {
+    _bunny_ls() { :; }
+    upload_plan_dir() { return 1; }
+    _bunny_put() { echo called >>"${TEST_TMP}/called"; }
+    _bunny_rm() { echo called >>"${TEST_TMP}/called"; }
+    run _upload_dir hdr host zone "${TEST_TMP}/local" rdir 0 0 7
+    [[ "$status" -ne 0 ]]
+    [[ "$output" == *"upload rdir: planning failed"* ]]
+    [[ ! -e "${TEST_TMP}/called" ]]
+}
+
+@test "_upload_dir removes its temp files on success and failure" {
+    mkdir "${TEST_TMP}/tmp"
+    progress_scenario
+    TMPDIR="${TEST_TMP}/tmp" run _upload_dir hdr host zone \
+        "${TEST_TMP}/local" rdir 0 0 7
+    [[ "$status" -eq 0 ]]
+    [[ -z "$(ls -A "${TEST_TMP}/tmp")" ]]
+    _bunny_put() { return 1; }
+    TMPDIR="${TEST_TMP}/tmp" run _upload_dir hdr host zone \
+        "${TEST_TMP}/local" rdir 0 0 7
+    [[ "$status" -ne 0 ]]
+    [[ -z "$(ls -A "${TEST_TMP}/tmp")" ]]
+}
