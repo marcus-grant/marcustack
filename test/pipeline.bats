@@ -11,6 +11,10 @@ echo "normpic $*" >>"${STUB_LOG}"
 STUB
     cat >"${TEST_TMP}/bin/uv" <<'STUB'
 #!/usr/bin/env bash
+if [[ "${1:-} ${2:-}" == "tool list" ]]; then
+    printf '%s\n' "${STUB_UV_LIST-normpic v0.1.1}"
+    exit 0
+fi
 echo "uv $*" >>"${STUB_LOG}"
 STUB
     chmod +x "${TEST_TMP}/bin/"*
@@ -48,6 +52,17 @@ teardown() {
         "${STUB_LOG}"
     grep -q -- "--dest-dir ${TEST_TMP}/site/pics/test-wedding/display" \
         "${STUB_LOG}"
+}
+
+@test "pipeline header is the first line and names installed normpic" {
+    run bash "${REPO_ROOT}/scripts/pipeline.sh"
+    [[ "${lines[0]}" == "pipeline: galleria v0.0.2, normpic v0.1.1" ]]
+}
+
+@test "pipeline header survives normpic not installed" {
+    export STUB_UV_LIST=""
+    run bash "${REPO_ROOT}/scripts/pipeline.sh"
+    [[ "$output" == *"pipeline: galleria v0.0.2, normpic not installed"* ]]
 }
 
 @test "pipeline galleria stage uses the configured pin" {

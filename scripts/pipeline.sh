@@ -8,8 +8,20 @@ source "${REPO_ROOT}/scripts/lib/stage.sh"
 source "${REPO_ROOT}/scripts/lib/verify.sh"
 source "${REPO_ROOT}/scripts/lib/upload.sh"
 
+# Print one stderr line naming the galleria pin and installed normpic.
+# No normpic entry in `uv tool list` reads "not installed". Exits 0.
+print_run_header() {
+    local normpic
+    normpic="$(uv tool list 2>/dev/null |
+        awk '$1 == "normpic" && !seen { print $2; seen = 1 }')" ||
+        normpic=""
+    echo "pipeline: galleria ${CFG_GALLERIA_VERSION}," \
+        "normpic ${normpic:-not installed}" >&2
+}
+
 CONFIG_DEFAULT="${XDG_CONFIG_HOME:-${HOME}/.config}/marcustack/config.toml"
 load_config "${MARCUSTACK_CONFIG:-${CONFIG_DEFAULT}}"
+print_run_header
 
 STAGE_RUN_DIR="${REPO_ROOT}/runs/$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "${STAGE_RUN_DIR}"
