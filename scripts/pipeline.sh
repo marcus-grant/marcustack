@@ -42,9 +42,12 @@ run_stage verify-pairing -- verify_pairing \
     "${PICS}/original" "${PICS}/display"
 halt_on_failure
 
+# Runs the galleria console script, not the module form.
+# The pipeline is what proves the installed executable works;
+# running the module instead would silently drop that check.
 run_stage galleria -- uv tool run \
     --from "git+https://github.com/marcus-grant/galleria@${CFG_GALLERIA_VERSION}" \
-    python -m galleria build \
+    galleria build \
     --original-manifest "${PICS}/original/manifest.json" \
     --display-manifest "${PICS}/display/manifest.json" \
     --output-dir "${CFG_SITE_DIR}" \

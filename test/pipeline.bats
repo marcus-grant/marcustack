@@ -61,6 +61,13 @@ teardown() {
     grep -q -- '--no-validate' "${REPO_ROOT}/scripts/pipeline.sh"
 }
 
+@test "pipeline galleria stage runs the console script" {
+    grep -Eq '^[[:space:]]+galleria build' \
+        "${REPO_ROOT}/scripts/pipeline.sh"
+    run grep -q 'python -m galleria' "${REPO_ROOT}/scripts/pipeline.sh"
+    [[ "$status" -ne 0 ]]
+}
+
 @test "pipeline upload stage passes the configured stall timeout" {
     grep -A6 'run_stage upload' "${REPO_ROOT}/scripts/pipeline.sh" |
         grep -q '"${CFG_STALL_SECONDS}"'
