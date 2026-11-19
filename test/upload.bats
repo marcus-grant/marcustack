@@ -20,10 +20,10 @@ sum_of() {
 }
 
 run_upload_site_stubbed() {
-    _upload_dir() { echo "$3 $4 $5 $6 $7" >>"${TEST_TMP}/calls"; }
+    _upload_dir() { echo "$3 $4 $5 $6 $7 $8" >>"${TEST_TMP}/calls"; }
     touch "${TEST_TMP}/p.hdr" "${TEST_TMP}/s.hdr"
     upload_site "${TEST_TMP}/p.hdr" "${TEST_TMP}/s.hdr" host \
-        pz sz /site c
+        pz sz /site c 7
 }
 
 @test "plan puts every file against an empty listing" {
@@ -106,6 +106,7 @@ make_curl_stub() {
     mkdir -p "${TEST_TMP}/bin"
     cat >"${TEST_TMP}/bin/curl" <<'STUB'
 #!/usr/bin/env bash
+printf '%s\n' "$*" >>"${TEST_TMP}/curl.log"
 out=""
 while [[ $# -gt 0 ]]; do
     [[ "$1" == "-o" ]] && out="$2"
@@ -207,4 +208,43 @@ stage_upload_with_put() {
     run_stage upload -- upload_site "${TEST_TMP}/p.hdr" \
         "${TEST_TMP}/s.hdr" host pz sz "${TEST_TMP}/site" c 2>/dev/null
     [[ "$(cat "${STAGE_RUN_DIR}/upload.status")" == "success" ]]
+}
+
+@test "_bunny_ls passes the stall and connect limits" {
+    make_curl_stub
+    run _bunny_ls hdr host zone p 7
+    [[ "$(cat "${TEST_TMP}/curl.log")" == *"--speed-limit 1 --speed-time 7"* ]]
+    [[ "$(cat "${TEST_TMP}/curl.log")" == *"--connect-timeout 7"* ]]
+}
+
+@test "_bunny_put passes the stall and connect limits" {
+    make_curl_stub
+    export STUB_CODE=201
+    run _bunny_put hdr host zone rp "${TEST_TMP}/local/a.jpg" 7
+    [[ "$status" -eq 0 ]]
+    [[ "$(cat "${TEST_TMP}/curl.log")" == *"--speed-limit 1 --speed-time 7"* ]]
+    [[ "$(cat "${TEST_TMP}/curl.log")" == *"--connect-timeout 7"* ]]
+}
+
+@test "_bunny_rm passes the stall and connect limits" {
+    make_curl_stub
+    run _bunny_rm hdr host zone rp 7
+    [[ "$status" -eq 0 ]]
+    [[ "$(cat "${TEST_TMP}/curl.log")" == *"--speed-limit 1 --speed-time 7"* ]]
+    [[ "$(cat "${TEST_TMP}/curl.log")" == *"--connect-timeout 7"* ]]
+}
+
+@test "_upload_dir forwards the stall to ls, put and rm" {
+    _bunny_ls() { echo "ls $5" >>"${TEST_TMP}/fwd"; echo "abc  gone.jpg"; }
+    _bunny_put() { echo "put $6" >>"${TEST_TMP}/fwd"; }
+    _bunny_rm() { echo "rm $5" >>"${TEST_TMP}/fwd"; }
+    run _upload_dir hdr host zone "${TEST_TMP}/local" rdir 0 0 7
+    [[ "$status" -eq 0 ]]
+    [[ "$(sort -u "${TEST_TMP}/fwd")" == $'ls 7\nput 7\nrm 7' ]]
+}
+
+@test "upload_site forwards the stall to every directory" {
+    run_upload_site_stubbed
+    [[ "$(wc -l <"${TEST_TMP}/calls")" -eq 8 ]]
+    [[ "$(grep -vc ' 7$' "${TEST_TMP}/calls")" -eq 0 ]]
 }

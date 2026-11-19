@@ -58,7 +58,8 @@ halt_on_failure
 run_stage upload -- upload_site \
     "${CFG_PICS_HDR}" "${CFG_SITE_HDR}" "${CFG_STORAGE_HOST}" \
     "${CFG_PICS_ZONE}" "${CFG_SITE_ZONE}" \
-    "${CFG_SITE_DIR}" "${CFG_COLLECTION_NAME}"
+    "${CFG_SITE_DIR}" "${CFG_COLLECTION_NAME}" \
+    "${CFG_STALL_SECONDS}"
 halt_on_failure
 
 echo "pipeline: all stages succeeded"

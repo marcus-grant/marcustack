@@ -61,6 +61,11 @@ teardown() {
     grep -q -- '--no-validate' "${REPO_ROOT}/scripts/pipeline.sh"
 }
 
+@test "pipeline upload stage passes the configured stall timeout" {
+    grep -A6 'run_stage upload' "${REPO_ROOT}/scripts/pipeline.sh" |
+        grep -q '"${CFG_STALL_SECONDS}"'
+}
+
 @test "pipeline does not upload when verification fails" {
     run bash "${REPO_ROOT}/scripts/pipeline.sh"
     [[ "$status" -ne 0 ]]
