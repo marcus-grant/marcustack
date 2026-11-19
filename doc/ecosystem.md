@@ -167,6 +167,25 @@ The wedding gallery is live through it.
 - Open: whether one injector handles navbar and banner or two,
   - and whether retro-theme or personal-site owns the navbar markup.
 
+## Content data
+
+### Wedding gallery: EXIF timezone offset
+
+The wedding collection carries a two-hour systemic EXIF time error.
+Its photos record +00:00 as their timezone offset,
+while the wedding took place in Swedish summer time, +02:00.
+The clock times are correct local time; only the offset field is wrong.
+The maintainer confirmed this against the day itself.
+The ceremony started at 16:00 and its first photos are stamped 16:10,
+consistent with a short delay.
+A fix rewrites the offset to +02:00 and leaves the clock times alone.
+Galleria's since-removed settings used 13 as an offset sentinel,
+meaning preserve the original timezone.
+The fix is unowned and post-MVP.
+The analysis lived in galleria's `doc/personal-setup-notes.md`.
+Recover it in a galleria clone with
+`git show ddd4a6c:doc/personal-setup-notes.md`.
+
 ## Known gaps
 
 Generated names are deterministic only where EXIF timestamps exist.
