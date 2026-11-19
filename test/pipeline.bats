@@ -11,6 +11,10 @@ echo "normpic $*" >>"${STUB_LOG}"
 STUB
     cat >"${TEST_TMP}/bin/uv" <<'STUB'
 #!/usr/bin/env bash
+if [[ "${1:-} ${2:-}" == "tool list" ]]; then
+    printf '%s\n' "${STUB_UV_LIST-normpic v0.1.1}"
+    exit 0
+fi
 echo "uv $*" >>"${STUB_LOG}"
 STUB
     chmod +x "${TEST_TMP}/bin/"*
@@ -50,11 +54,38 @@ teardown() {
         "${STUB_LOG}"
 }
 
+@test "pipeline header is the first line and names installed normpic" {
+    run bash "${REPO_ROOT}/scripts/pipeline.sh"
+    [[ "${lines[0]}" == "pipeline: galleria v0.0.2, normpic v0.1.1" ]]
+}
+
+@test "pipeline header survives normpic not installed" {
+    export STUB_UV_LIST=""
+    run bash "${REPO_ROOT}/scripts/pipeline.sh"
+    [[ "$output" == *"pipeline: galleria v0.0.2, normpic not installed"* ]]
+}
+
 @test "pipeline galleria stage uses the configured pin" {
     grep -q 'galleria@${CFG_GALLERIA_VERSION}' \
         "${REPO_ROOT}/scripts/pipeline.sh"
     grep -q -- '--output-dir "${CFG_SITE_DIR}"' \
         "${REPO_ROOT}/scripts/pipeline.sh"
+}
+
+@test "pipeline galleria stage disables validation explicitly" {
+    grep -q -- '--no-validate' "${REPO_ROOT}/scripts/pipeline.sh"
+}
+
+@test "pipeline galleria stage runs the console script" {
+    grep -Eq '^[[:space:]]+galleria build' \
+        "${REPO_ROOT}/scripts/pipeline.sh"
+    run grep -q 'python -m galleria' "${REPO_ROOT}/scripts/pipeline.sh"
+    [[ "$status" -ne 0 ]]
+}
+
+@test "pipeline upload stage passes the configured stall timeout" {
+    grep -A6 'run_stage upload' "${REPO_ROOT}/scripts/pipeline.sh" |
+        grep -q '"${CFG_STALL_SECONDS}"'
 }
 
 @test "pipeline does not upload when verification fails" {

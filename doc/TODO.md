@@ -22,30 +22,19 @@ PRs land in order unless explicitly noted.
 Each PR is small enough to read in one sitting and ships one cohesive
 chunk of behavior.
 
-### Unplanned, Needs Home PR
+### Upload parallelism
 
-- Ecosystem tool version reporting.
-  - A lot of these projects are in early active development.
-  - Really need to know what version is acting on the pipeline.
+Upload is sequential, one curl per file, and slow.
 
-### Upload progress and parallelism
-
-The upload stage is slow and silent.
-
-- Upload is sequential, one curl per file.
-  - Per-request latency dominates, about 3 seconds per file.
-    - File size barely matters.
+- Per-request latency dominates, about 3 seconds per file.
+  - File size barely matters.
   - A 200 Mbit link runs at a quarter utilization.
-  - Parallel PUTs with a bounded worker count are the known fix.
-- No progress output during verification or upload.
-  - The last line on screen stays galleria's "generating static site",
-    - while marcustack stages run silently, which misreports the stage.
-  - Every stage prints a line when it starts.
-  - Upload prints each directory's:
-    - planned put, delete, and skip counts...
-    - before transferring, then done against planned as it goes.
-  - The run header names each tool's resolved version:
-    - the galleria tag and the normpic version.
+- Parallel PUTs with a bounded worker count are the known fix.
+  - The worker count is a config tunable with a program default.
+- Per-transfer `i/T` progress lines must stay readable in parallel.
+- Acceptance needs a deploy with real transfers, not an all-skip one.
+  - The first galleria release that changes rendered output supplies it.
+  - It also exercises per-transfer progress lines on real data.
 
 ### Deployment status command
 
@@ -56,17 +45,52 @@ pics is write-once, so mistakes accumulate there permanently.
   - Reports what a deploy would put, delete, and skip.
   - Transfers nothing.
 
-### Upstream reports
+### Endpoint verification
 
-- normpic fails with "File exists" when the source collection moves.
-  - Stale links in `pics/COLLECTION/original` and `display`:
-    - point at the old path and are not replaced.
-  - Workaround: remove those two trees, then rerun.
-    - They hold only normpic links and manifests.
-  - File upstream in normpic.
-- galleria v0.0.4 provides no `galleria` executable; v0.0.3 did.
-  - marcustack is unaffected; it runs `python -m galleria`.
-  - File upstream in galleria.
+Edge rules live in the Bunny interface, not this repository.
+A rule change therefore has no commit, no diff, and no test.
+Two failures came from there:
+a pattern missed by piecemeal rule edits,
+and a redirect loop from `%{Path.0-}/` dropping a trailing slash.
+Rule text is a claim; an observed request is ground truth.
+Reading rules back through Bunny's API, if it offers that,
+would have caught the first failure and not the second.
+
+- A script in this repository, run as a stage.
+  - Requests each public URL form and asserts the result.
+  - Read-only and needs no credentials.
+    - Anyone can run it at any time.
+- Config carries a named list of entries.
+  - Each entry has a path and an expected status.
+  - The script loops the list and reports each entry.
+  - The exact shape is open; decide against the code when built.
+- Redirect depth is capped, and exceeding the cap is a failure.
+  - No per-entry setting; a redirect loop is always wrong.
+- Coverage:
+  - both the `gallery/` and `galleries/` prefixes,
+  - the bare and trailing-slash forms,
+  - pages and a per-photo page,
+  - one URL under each rendition kind.
+- Once it exists, it replaces the by-hand rung in `doc/QA.md`.
+  - That rung is "Changes with no diff".
+
+### Pin normpic through uv tool run
+
+normpic runs from a separately installed tool,
+while galleria runs at its configured tag through `uv tool run`.
+The installed normpic can drift from the `[normpic]` pin in config.
+
+- Run normpic through `uv tool run` at the configured tag.
+  - The run header then reports the pin, as it does for galleria.
+- Rework `normpic_schema_path` in `scripts/lib/verify.sh`.
+  - It searches the installed tool's directory for the schema.
+  - `uv tool run` does not populate that directory.
+- Remove the test suite's dependency on an installed normpic.
+  - The pipeline calls `normpic_schema_path` before any stage.
+  - Without normpic installed, the script exits there.
+  - The stubs never run, so a pipeline test fails.
+    - "pipeline invokes normpic with per-kind dest dirs".
+- Retire the `just install-normpic` recipe.
 
 ## Project housekeeping
 
