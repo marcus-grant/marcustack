@@ -32,8 +32,9 @@ version = "v0.0.5"
 
 [deploy]
 # Credentials are found by convention at
-# ~/.config/marcustack/galleries/COLLECTION_NAME/pics.hdr and
-# site.hdr, one AccessKey header line each.
+# ~/.config/marcustack/gallery/pics.hdr and site.hdr,
+# one AccessKey header line each.
+# Both files are shared by every collection.
 # marcustack passes those paths to curl and never reads them.
 # Bunny storage endpoint for both zones, from the API/HTTP pane.
 storage_host = "storage.bunnycdn.com"
