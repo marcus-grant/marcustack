@@ -37,6 +37,30 @@ teardown() {
     [[ "$output" != *"/secret/path"* ]]
 }
 
+@test "run_stage prints the start line before the command output" {
+    emit() { echo MARKER; }
+    run run_stage s -- emit
+    [[ "${lines[0]}" == "stage s: start" ]]
+    [[ "${lines[1]}" == "MARKER" ]]
+}
+
+@test "run_stage success line carries the elapsed seconds" {
+    bump() { SECONDS=$((SECONDS + 5)); }
+    run run_stage s -- bump
+    [[ "$output" == *"stage s: success (5s)"* ]]
+}
+
+@test "run_stage failure prints one end line with elapsed seconds" {
+    run run_stage s -- false
+    [[ "$output" =~ stage\ s:\ failure\ \([0-9]+s\) ]]
+    [[ "$output" != *"stage failed"* ]]
+}
+
+@test "run_stage success output omits command arguments" {
+    run run_stage s -- true /secret/path
+    [[ "$output" != *"/secret/path"* ]]
+}
+
 @test "run_stage fails naming STAGE_RUN_DIR when unset" {
     unset STAGE_RUN_DIR
     run run_stage anything -- true

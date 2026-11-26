@@ -28,6 +28,8 @@ Judgment gets reasoned around.
   output is pasted back, so the relay is an exfiltration path.
   The burden is on whoever writes the command.
 - No `set -x` in committed code; it prints every value.
+- No curl `-v`, `--verbose`, or `--trace`, in code or proposed commands.
+  - They print request headers, and the `AccessKey` header is the key.
 - A failing stage names the missing key or path, never dumps the
   config.
 

@@ -8,8 +8,20 @@ source "${REPO_ROOT}/scripts/lib/stage.sh"
 source "${REPO_ROOT}/scripts/lib/verify.sh"
 source "${REPO_ROOT}/scripts/lib/upload.sh"
 
+# Print one stderr line naming the galleria pin and installed normpic.
+# No normpic entry in `uv tool list` reads "not installed". Exits 0.
+print_run_header() {
+    local normpic
+    normpic="$(uv tool list 2>/dev/null |
+        awk '$1 == "normpic" && !seen { print $2; seen = 1 }')" ||
+        normpic=""
+    echo "pipeline: galleria ${CFG_GALLERIA_VERSION}," \
+        "normpic ${normpic:-not installed}" >&2
+}
+
 CONFIG_DEFAULT="${XDG_CONFIG_HOME:-${HOME}/.config}/marcustack/config.toml"
 load_config "${MARCUSTACK_CONFIG:-${CONFIG_DEFAULT}}"
+print_run_header
 
 STAGE_RUN_DIR="${REPO_ROOT}/runs/$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "${STAGE_RUN_DIR}"
@@ -42,12 +54,16 @@ run_stage verify-pairing -- verify_pairing \
     "${PICS}/original" "${PICS}/display"
 halt_on_failure
 
+# Runs the galleria console script, not the module form.
+# The pipeline is what proves the installed executable works;
+# running the module instead would silently drop that check.
 run_stage galleria -- uv tool run \
     --from "git+https://github.com/marcus-grant/galleria@${CFG_GALLERIA_VERSION}" \
-    python -m galleria build \
+    galleria build \
     --original-manifest "${PICS}/original/manifest.json" \
     --display-manifest "${PICS}/display/manifest.json" \
     --output-dir "${CFG_SITE_DIR}" \
+    --no-validate \
     "${MARCUSTACK_DERIVE:---no-derive}"
 run_stage verify-site -- verify_site \
     "${CFG_SITE_DIR}" "${CFG_COLLECTION_NAME}" "${CFG_EXPECTED_COUNT}"
@@ -57,7 +73,8 @@ halt_on_failure
 run_stage upload -- upload_site \
     "${CFG_PICS_HDR}" "${CFG_SITE_HDR}" "${CFG_STORAGE_HOST}" \
     "${CFG_PICS_ZONE}" "${CFG_SITE_ZONE}" \
-    "${CFG_SITE_DIR}" "${CFG_COLLECTION_NAME}"
+    "${CFG_SITE_DIR}" "${CFG_COLLECTION_NAME}" \
+    "${CFG_STALL_SECONDS}"
 halt_on_failure
 
 echo "pipeline: all stages succeeded"
