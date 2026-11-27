@@ -65,26 +65,47 @@ Field-tested on throwaway zones, all since deleted:
   - Photo file names carry timestamps such as `T185429`.
   - Match status codes in their response context instead.
 
-Open, to decide before the plan:
+Decided:
 
-- Credentials: a dedicated rclone config file is proposed.
-  - `~/.config/marcustack/rclone.conf`, created by the maintainer.
-  - Passed as `rclone --config PATH`, never read by marcustack.
-- The new site zone's name.
-- Whether the transport is chosen by a config key or a flag.
-- Sync shape:
-  - one sync per directory pair, as `upload_site` does today,
-  - or one sync of the site root with include filters.
-- Whether the old site zone is kept for the curl fallback.
-  - Falling back means curl uploads to it again,
-  - and the pull zone's origin is repointed back to it.
-- `[deploy] stall_seconds` against rclone's own timeouts and retries.
-  - rclone has `--contimeout`, `--timeout` and `--retries`.
-  - The setting still applies to curl, which keeps uploading pics.
+- Credentials: `~/.config/marcustack/gallery/rclone.conf`.
+  - Created by the maintainer with `rclone config --config PATH`.
+  - marcustack checks it is readable and passes `--config PATH`.
+  - marcustack never reads the file.
+  - One remote per gallery zone: `site` now, `pics` when pics moves.
+  - Zones serving more than the gallery get a separate file.
+- The new site zone:
+  - Frankfurt primary, S3 enabled, New York replication,
+  - on the old site zone's storage tier.
+  - Replication regions can be added later but never removed.
+  - Its name is chosen by the maintainer and never printed.
+  - Visitors reach the pull zone's hostname, which a repoint keeps.
+- The transport is chosen by a `[deploy]` config key.
+  - `rclone` when the key is absent.
+  - curl is deprecated and expected to be removed.
+  - It stays only while Bunny's S3 API is a preview and still changing.
+  - The key's name is decided against the code.
+- One `rclone sync` per directory, four in all:
+  - `pics/COLLECTION/preview`,
+  - `pics/COLLECTION/thumb`,
+  - `gallery/COLLECTION` to `gallery/COLLECTION`,
+  - `gallery/COLLECTION` to `galleries/COLLECTION`.
+  - An explicit list fails visibly when galleria adds a directory.
+    - Exclude filters would publish anything new by default.
+  - galleria v0.0.6 writes its stylesheets inside `gallery/COLLECTION/`.
+- rclone's timeouts come from config, never hardcoded.
+  - Whether they share `stall_seconds` is decided when planned.
+  - rclone's retries stay at its defaults.
+  - curl's `stall_seconds` behavior for the pics zone does not change.
+- The old site zone is kept through migration and acceptance.
+  - One read-only curl listing of the new zone decides the fallback.
+  - HTTP 200: the curl fallback targets the new zone.
+    - The old zone is then deleted after acceptance.
+  - Otherwise the old zone stays as the fallback target.
 
 Migration, in order:
 
 - Create the new S3 site zone and the rclone config file.
+- Probe the new zone with one read-only curl listing.
 - Sync the current build to the new zone.
   - It is galleria v0.0.5 output, identical to what is live.
   - Both zones then hold the same content.
@@ -94,6 +115,9 @@ Migration, in order:
 - Acceptance:
   - a deploy that syncs to the new zone and copies nothing,
   - public gallery URLs still serving on both prefixes.
+- Delete the old site zone, only if the probe returned HTTP 200.
+  - A destructive operation under `doc/QA.md`.
+  - Its pre-flight list is that one zone.
 
 The closing Doc commit brings `doc/ecosystem.md` current:
 
@@ -188,8 +212,16 @@ Acceptance is the galleria v0.0.6 deploy:
 - Observe, in both output modes:
   - a first sync that copies the changed pages and the stylesheets,
   - a second sync of the same tree that copies nothing,
-  - the `galleries/` mirror matching `gallery/`,
-  - superseded stylesheets removed from the zone by the sync.
+  - the `galleries/` mirror matching `gallery/`.
+- Then check delete mode, since this deploy supersedes no stylesheet.
+  - v0.0.5 output has no stylesheet files, only an inline style block.
+  - Copy a live stylesheet within the zone, named like an older build's.
+    - A copy keeps live pages styled; a rename would not.
+  - Rerun the deploy: the copy is deleted and nothing else changes.
+  - A destructive run under `doc/QA.md`.
+    - Its pre-flight list is the copy.
+  - This checks marcustack's delete-mode sync.
+    - galleria's own pruning is galleria's to test.
 - Report what was observed, not that it worked.
 
 ### Richer CLI output
@@ -274,6 +306,25 @@ would have caught the first failure and not the second.
   - one URL under each rendition kind.
 - Once it exists, it replaces the by-hand rung in `doc/QA.md`.
   - That rung is "Changes with no diff".
+
+### Link verification
+
+An explicit sync list misses any directory galleria adds.
+Checking the built links catches that before upload.
+
+- Never by requesting every link from the public site.
+- The full link set is checked against files:
+  - before deploy, against the local build tree, offline,
+  - after deploy, against the zone listings, one per synced directory.
+    - Possibly through `rclone check`.
+- Links into `original` and `display` reach the pics zone by redirect.
+- Edge behavior stays with "Endpoint verification", by a small sample.
+  - Only a request can observe an edge rule.
+- It complements that entry: the expected set comes from the build.
+- Open, decided against the code:
+  - the tool, possibly an existing offline link checker,
+  - how links into the pics zone are represented,
+  - a pipeline stage or a separate `just` recipe.
 
 ### Pin normpic through uv tool run
 
