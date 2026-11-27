@@ -123,7 +123,9 @@ STUB
 @test "_bunny_ls lists files only on 200" {
     make_curl_stub
     export STUB_CODE=200
-    export STUB_BODY='[{"IsDirectory":false,"ObjectName":"a.jpg","Checksum":"ABC"},{"IsDirectory":true,"ObjectName":"d"}]'
+    local file='{"IsDirectory":false,"ObjectName":"a.jpg","Checksum":"ABC"}'
+    local dir='{"IsDirectory":true,"ObjectName":"d"}'
+    export STUB_BODY="[${file},${dir}]"
     run _bunny_ls hdr host secretzone some/path
     [[ "$status" -eq 0 ]]
     [[ "$output" == "ABC  a.jpg" ]]
@@ -161,7 +163,10 @@ STUB
 
 @test "_upload_dir stops at the first failed put" {
     _bunny_ls() { :; }
-    _bunny_put() { echo "$4" >>"${TEST_TMP}/puts"; return 1; }
+    _bunny_put() {
+        echo "$4" >>"${TEST_TMP}/puts"
+        return 1
+    }
     run _upload_dir hdr host zone "${TEST_TMP}/local" rdir 0 0
     [[ "$status" -ne 0 ]]
     [[ "$(wc -l <"${TEST_TMP}/puts")" -eq 1 ]]
@@ -176,7 +181,10 @@ STUB
 }
 
 @test "upload_site stops at the first failing directory" {
-    _upload_dir() { echo "$5" >>"${TEST_TMP}/calls"; return 1; }
+    _upload_dir() {
+        echo "$5" >>"${TEST_TMP}/calls"
+        return 1
+    }
     touch "${TEST_TMP}/p.hdr" "${TEST_TMP}/s.hdr"
     run upload_site "${TEST_TMP}/p.hdr" "${TEST_TMP}/s.hdr" host \
         pz sz /site c
@@ -235,7 +243,10 @@ stage_upload_with_put() {
 }
 
 @test "_upload_dir forwards the stall to ls, put and rm" {
-    _bunny_ls() { echo "ls $5" >>"${TEST_TMP}/fwd"; echo "abc  gone.jpg"; }
+    _bunny_ls() {
+        echo "ls $5" >>"${TEST_TMP}/fwd"
+        echo "abc  gone.jpg"
+    }
     _bunny_put() { echo "put $6" >>"${TEST_TMP}/fwd"; }
     _bunny_rm() { echo "rm $5" >>"${TEST_TMP}/fwd"; }
     run _upload_dir hdr host zone "${TEST_TMP}/local" rdir 0 0 7
